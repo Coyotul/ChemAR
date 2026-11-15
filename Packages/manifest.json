@@ -1,15 +1,6 @@
 {
-  "scopedRegistries": [
-    {
-      "name": "Vuforia",
-      "url": "https://packages.developer.vuforia.com/npm/registry/",
-      "scopes": [
-        "com.ptc.vuforia.engine"
-      ]
-    }
-  ],
   "dependencies": {
-    "com.ptc.vuforia.engine": "11.4.4",
+    "com.ptc.vuforia.engine": "file:com.ptc.vuforia.engine-11.4.4.tgz",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.unity.xr.arfoundation": "6.1.0",
     "com.unity.xr.arcore": "6.1.0",
