@@ -1,0 +1,29 @@
+{
+    "name": "ChemAR.Vuforia.Editor",
+    "rootNamespace": "ChemAR.Vuforia.Editor",
+    "references": [
+        "ChemAR.Core",
+        "ChemAR.Vuforia",
+        "VuforiaScripts",
+        "VuforiaEditorScripts"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "CHEMAR_VUFORIA_PRESENT"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.ptc.vuforia.engine",
+            "expression": "1.0.0",
+            "define": "CHEMAR_VUFORIA_PRESENT"
+        }
+    ],
+    "noEngineReferences": false
+}

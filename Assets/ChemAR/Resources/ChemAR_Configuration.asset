@@ -1,0 +1,173 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8db3e0d7884f36d42bb323c889758568, type: 3}
+  m_Name: ChemAR_Configuration
+  m_EditorClassIdentifier: ChemAR.Core::ChemAR.Core.ChemistryConfigurationSO
+  reactionDistanceThreshold: 0.14
+  proximityNoticeThreshold: 0.3
+  occlusionGracePeriod: 2
+  enableJitterFilter: 1
+  reactionHoldTime: 0.4
+  elements:
+  - symbol: H
+    name: Hidrogen
+    atomicNumber: 1
+    atomicMass: 1.008
+    standardValence: 1
+    electronegativity: 2.2
+    cpkColor: {r: 0.95, g: 0.95, b: 0.98, a: 1}
+    visualRadius: 0.038
+    category: 0
+    pedagogicalNotes: "Cel mai u\u0219or element chimic. 1 proton \u0219i 1 electron
+      de valen\u021B\u0103."
+  - symbol: O
+    name: Oxigen
+    atomicNumber: 8
+    atomicMass: 15.999
+    standardValence: 2
+    electronegativity: 3.44
+    cpkColor: {r: 0.9, g: 0.22, b: 0.21, a: 1}
+    visualRadius: 0.052
+    category: 0
+    pedagogicalNotes: "Element electronegativ esen\u021Bial arderii \u0219i respira\u021Biei.
+      Valen\u021Ba standard: 2."
+  - symbol: Na
+    name: Sodiu
+    atomicNumber: 11
+    atomicMass: 22.99
+    standardValence: 1
+    electronegativity: 0.93
+    cpkColor: {r: 0.58, g: 0.2, b: 0.75, a: 1}
+    visualRadius: 0.07
+    category: 2
+    pedagogicalNotes: "Metal alcalin foarte reactiv. Cedeaz\u0103 u\u0219or 1 electron
+      (Na+)."
+  - symbol: Cl
+    name: Clor
+    atomicNumber: 17
+    atomicMass: 35.45
+    standardValence: 1
+    electronegativity: 3.16
+    cpkColor: {r: 0.18, g: 0.7, b: 0.28, a: 1}
+    visualRadius: 0.062
+    category: 7
+    pedagogicalNotes: "Halogen reactiv. Accept\u0103 1 electron devenind anion clorur\u0103
+      (Cl-)."
+  - symbol: C
+    name: Carbon
+    atomicNumber: 6
+    atomicMass: 12.011
+    standardValence: 4
+    electronegativity: 2.55
+    cpkColor: {r: 0.18, g: 0.18, b: 0.2, a: 1}
+    visualRadius: 0.055
+    category: 0
+    pedagogicalNotes: "Baza chimiei organice. Tetravalent (valen\u021Ba 4)."
+  - symbol: N
+    name: Azot
+    atomicNumber: 7
+    atomicMass: 14.007
+    standardValence: 3
+    electronegativity: 3.04
+    cpkColor: {r: 0.12, g: 0.45, b: 0.9, a: 1}
+    visualRadius: 0.048
+    category: 0
+    pedagogicalNotes: "Gaz diatomic, 78% din atmosfer\u0103. Trivalent (valen\u021Ba
+      3)."
+  reactions:
+  - reactionId: R_H2O
+    productFormula: H2O
+    productName: "Ap\u0103"
+    productIupac: Dihidrogen monoxid
+    reactionEquation: "2H + O \u2192 H\u2082O"
+    reactants:
+    - elementSymbol: H
+      count: 1
+    - elementSymbol: O
+      count: 1
+    deltaEnthalpy: -285.8
+    reactionType: 0
+    geometry: 1
+    bondTypeDescription: "Covalent Polar (104.5\xB0)"
+    pedagogicalExplanation: "Reac\u021Bie puternic exotermic\u0103. Se formeaz\u0103
+      leg\u0103turi covalente polare orientate la 104.5\xB0 cu eliberare de energie
+      (\u0394H = -285.8 kJ/mol)."
+    primaryVfxColor: {r: 1, g: 0.45, b: 0.1, a: 1}
+  - reactionId: R_NaCl
+    productFormula: NaCl
+    productName: "Sare de buc\u0103t\u0103rie"
+    productIupac: "Clorur\u0103 de sodiu"
+    reactionEquation: "Na + Cl \u2192 NaCl"
+    reactants:
+    - elementSymbol: Na
+      count: 1
+    - elementSymbol: Cl
+      count: 1
+    deltaEnthalpy: -411.1
+    reactionType: 0
+    geometry: 6
+    bondTypeDescription: "Ionic (transfer Na\u207A + Cl\u207B)"
+    pedagogicalExplanation: "Reac\u021Bie redox viguroas\u0103. Transfer complet
+      de electroni cu formare de re\u021Bea cristalin\u0103 ionic\u0103 (\u0394H
+      = -411.1 kJ/mol)."
+    primaryVfxColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  - reactionId: R_CO2
+    productFormula: CO2
+    productName: Dioxid de Carbon
+    productIupac: Dioxid de carbon
+    reactionEquation: "C + O \u2192 CO\u2082"
+    reactants:
+    - elementSymbol: C
+      count: 1
+    - elementSymbol: O
+      count: 1
+    deltaEnthalpy: -393.5
+    reactionType: 2
+    geometry: 2
+    bondTypeDescription: "Covalent Dublu O=C=O (180\xB0)"
+    pedagogicalExplanation: "Oxidare complet\u0103 a carbonului cu leg\u0103turi
+      duble simetrice liniare (\u0394H = -393.5 kJ/mol)."
+    primaryVfxColor: {r: 1, g: 0.25, b: 0.1, a: 1}
+  - reactionId: R_NH3
+    productFormula: NH3
+    productName: Amoniac
+    productIupac: "Trihidrur\u0103 de azot"
+    reactionEquation: "N + H \u2192 NH\u2083"
+    reactants:
+    - elementSymbol: N
+      count: 1
+    - elementSymbol: H
+      count: 1
+    deltaEnthalpy: -46.1
+    reactionType: 0
+    geometry: 4
+    bondTypeDescription: Covalent Polar Piramidal
+    pedagogicalExplanation: "Sinteza amoniacului genereaz\u0103 o molecul\u0103 piramidal-trigonal\u0103
+      (\u0394H = -46.1 kJ/mol)."
+    primaryVfxColor: {r: 0.3, g: 0.6, b: 1, a: 1}
+  - reactionId: R_Endo
+    productFormula: NO2
+    productName: Dioxid de Azot (Endo)
+    productIupac: Dioxid de azot
+    reactionEquation: "N + O \u2192 NO\u2082 (Endo)"
+    reactants:
+    - elementSymbol: N
+      count: 1
+    - elementSymbol: O
+      count: 1
+    deltaEnthalpy: 57.2
+    reactionType: 4
+    geometry: 3
+    bondTypeDescription: "Covalent de Rezonan\u021B\u0103"
+    pedagogicalExplanation: "Reac\u021Bie endotermic\u0103 (\u0394H = +57.2 kJ/mol).
+      Absoarbe c\u0103ldur\u0103 din mediu, r\u0103cind zona de contact."
+    primaryVfxColor: {r: 0.1, g: 0.8, b: 1, a: 1}

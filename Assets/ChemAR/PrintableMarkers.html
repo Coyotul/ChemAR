@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>ChemAR - Cartonașe de Markeri pentru Imprimat & Afișat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #94a3b8;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .actions {
+            margin-bottom: 30px;
+        }
+        .btn-print {
+            padding: 12px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-print:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 32px;
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+            transition: transform 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #38bdf8;
+        }
+        .card img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+            background: white;
+        }
+        .desc {
+            margin-top: 14px;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 0.5px;
+        }
+        .tag {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .tag-H  { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+        .tag-N  { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+        .tag-O  { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid #f97316; }
+        .tag-Na { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; }
+        .tag-Cl { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+        .tag-C  { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid #94a3b8; }
+        
+        @media print {
+            body { background: white; color: black; padding: 0; }
+            h1, .subtitle, .actions { display: none; }
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 100%; }
+            .card { background: white; box-shadow: none; border: 1px dashed #cbd5e1; page-break-inside: avoid; padding: 10px; }
+            .card:hover { transform: none; border-color: #cbd5e1; }
+            .desc { color: black; font-size: 14px; margin-top: 8px; }
+            .tag { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <h1>ChemAR - Laborator Chimic în Realitate Augmentată</h1>
+    <p class="subtitle">
+        Cartonașe de Urmărire Calibrate (Image Tracking Markers) optimizate pentru ARCore & ARKit.<br>
+        Fiecare cartonaș are coduri matriciale asimetrice și textură de înaltă entropie pentru recunoaștere fără ambiguitate.<br>
+        <b>Instrucțiuni:</b> Se pot imprima (A4) sau afișa direct pe ecranul laptopului / tabletei.
+    </p>
+    <div class="actions">
+        <button class="btn-print" onclick="window.print()">🖨️ Imprimă Cartonașele (Print PDF)</button>
+    </div>
+    <div class="grid">
+        <div class="card">
+            <img src="Textures/Markers/Marker_H.png" alt="Hidrogen (H)">
+            <div class="desc" style="color: #2563eb;">Hidrogen (H) - Valența I</div>
+            <span class="tag tag-H">Z = 1 • Masa: 1.008 u</span>
+        </div>
+        <div class="card">
+            <img src="Textures/Markers/Marker_O.png" alt="Oxigen (O)">
+            <div class="desc" style="color: #dc2626;">Oxigen (O) - Valența II</div>
+            <span class="tag tag-O">Z = 8 • Masa: 15.999 u</span>
+        </div>
+        <div class="card">
+            <img src="Textures/Markers/Marker_Na.png" alt="Sodiu (Na)">
+            <div class="desc" style="color: #9333ea;">Sodiu (Na) - Valența I (+1)</div>
+            <span class="tag tag-Na">Z = 11 • Masa: 22.990 u</span>
+        </div>
+        <div class="card">
+            <img src="Textures/Markers/Marker_Cl.png" alt="Clor (Cl)">
+            <div class="desc" style="color: #16a34a;">Clor (Cl) - Valența I (-1)</div>
+            <span class="tag tag-Cl">Z = 17 • Masa: 35.45 u</span>
+        </div>
+        <div class="card">
+            <img src="Textures/Markers/Marker_C.png" alt="Carbon (C)">
+            <div class="desc" style="color: #475569;">Carbon (C) - Valența IV</div>
+            <span class="tag tag-C">Z = 6 • Masa: 12.011 u</span>
+        </div>
+        <div class="card">
+            <img src="Textures/Markers/Marker_N.png" alt="Azot (N)">
+            <div class="desc" style="color: #2563eb;">Azot (N) - Valența III</div>
+            <span class="tag tag-N">Z = 7 • Masa: 14.007 u</span>
+        </div>
+    </div>
+</body>
+</html>

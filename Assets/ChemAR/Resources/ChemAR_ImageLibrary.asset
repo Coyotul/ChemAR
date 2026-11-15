@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 848409ee8ba454f42a5ddff137688a27, type: 3}
+  m_Name: ChemAR_ImageLibrary
+  m_EditorClassIdentifier: Unity.XR.ARSubsystems::UnityEngine.XR.ARSubsystems.XRReferenceImageLibrary
+  m_GuidLow: 5335985980780431595
+  m_GuidHigh: 12554883104808840067
+  m_DataStore:
+    m_Storage: []
+  m_Images:
+  - m_SerializedGuid:
+      m_GuidLow: 4887148019082388865
+      m_GuidHigh: 1667140493635440296
+    m_SerializedTextureGuid:
+      m_GuidLow: 469679195952646381
+      m_GuidHigh: 5274809656452193947
+    m_Size: {x: 0.12, y: 0.12}
+    m_SpecifySize: 1
+    m_Name: Marker_H
+    m_Texture: {fileID: 2800000, guid: 812608eda2bd06849b1ea2766fe33349, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5735621576804084070
+      m_GuidHigh: 13144217763055903115
+    m_SerializedTextureGuid:
+      m_GuidLow: 2982761322577615779
+      m_GuidHigh: 17217498934516455786
+    m_Size: {x: 0.12, y: 0.12}
+    m_SpecifySize: 1
+    m_Name: Marker_O
+    m_Texture: {fileID: 2800000, guid: 9a035ba3e59e29646a1985080fd8f0ee, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5413049675382459674
+      m_GuidHigh: 15653865310291961774
+    m_SerializedTextureGuid:
+      m_GuidLow: 6288341461706972318
+      m_GuidHigh: 8976855512390886425
+    m_Size: {x: 0.12, y: 0.12}
+    m_SpecifySize: 1
+    m_Name: Marker_Na
+    m_Texture: {fileID: 2800000, guid: 0b679c9ead3e574419e410f08632947c, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5237533693713826646
+      m_GuidHigh: 2549873661487639967
+    m_SerializedTextureGuid:
+      m_GuidLow: 17047467432040446738
+      m_GuidHigh: 2773906273546685707
+    m_Size: {x: 0.12, y: 0.12}
+    m_SpecifySize: 1
+    m_Name: Marker_Cl
+    m_Texture: {fileID: 2800000, guid: decfbb12c54eec940b4dfa1a0fe57e26, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5564230081669308834
+      m_GuidHigh: 13388081109466638477
+    m_SerializedTextureGuid:
+      m_GuidLow: 14228054546479999886
+      m_GuidHigh: 5136451802999037785
+    m_Size: {x: 0.12, y: 0.12}
+    m_SpecifySize: 1
+    m_Name: Marker_C
+    m_Texture: {fileID: 2800000, guid: ffd26b8e3439c574591fac63b3574847, type: 3}
+  - m_SerializedGuid:
+      m_GuidLow: 5640850026159348795
+      m_GuidHigh: 14732344713254254757
+    m_SerializedTextureGuid:
+      m_GuidLow: 8053803112019157112
+      m_GuidHigh: 16724072123711952234
+    m_Size: {x: 0.12, y: 0.12}
+    m_SpecifySize: 1
+    m_Name: Marker_N
+    m_Texture: {fileID: 2800000, guid: 6ed66078db426fc46a15dd13fdd617e8, type: 3}
