@@ -307,9 +307,10 @@ namespace ChemAR.Vuforia.Editor
 
             so.ApplyModifiedProperties();
 
-            // Default Observer Event Handler
-            if (targetGo.GetComponent<DefaultObserverEventHandler>() == null)
-                targetGo.AddComponent<DefaultObserverEventHandler>();
+            // Default Observer Event Handler (Tracked only to prevent false positives from adjacent markers)
+            var eventHandler = targetGo.GetComponent<DefaultObserverEventHandler>();
+            if (eventHandler == null) eventHandler = targetGo.AddComponent<DefaultObserverEventHandler>();
+            eventHandler.StatusFilter = DefaultObserverEventHandler.TrackingStatusFilter.Tracked;
 
             // VuforiaTrackedCard
             var card = targetGo.GetComponent<VuforiaTrackedCard>();

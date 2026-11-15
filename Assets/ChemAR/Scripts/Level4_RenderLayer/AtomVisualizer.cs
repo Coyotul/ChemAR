@@ -276,10 +276,14 @@ namespace ChemAR.Render
                 orbitalRing2.transform.Rotate(Vector3.forward, -rotationSpeed * 0.85f * Time.deltaTime, Space.Self);
             }
 
-            // 3. Keep Billboard Badge facing Main Camera upright
+            // 3. Keep Billboard Badge facing Main Camera upright and positioned cleanly above the atom
             if (billboardBadge != null && Camera.main != null)
             {
-                billboardBadge.transform.rotation = Camera.main.transform.rotation;
+                float nucleusR = (element != null) ? Mathf.Max(0.018f, element.visualRadius * 0.5f) : 0.025f;
+                float verticalOffset = (nucleusR + 0.045f) * ChemARUIManager.CurrentScale;
+                billboardBadge.transform.position = visualRoot.position + Camera.main.transform.up * verticalOffset;
+                // Flip 180 degrees around local X to display text right-side up in AR camera view
+                billboardBadge.transform.rotation = Camera.main.transform.rotation * Quaternion.Euler(180f, 0f, 0f);
             }
         }
     }

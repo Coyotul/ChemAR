@@ -27,6 +27,7 @@ namespace ChemAR.UI
         private GameObject cameraHintText;
         private GameObject editorToolbar;
         private Text scaleValueText;
+        private Text resetBtnText;
         private int activeTrackedMarkersCount = 0;
 
         public static float CurrentScale { get; private set; } = 1.0f;
@@ -56,11 +57,42 @@ namespace ChemAR.UI
             OnRequestRevertAll?.Invoke();
             if (reactionResolver != null) reactionResolver.DissociateAllReactions();
 
+            // Also explicitly notify VuforiaReactionController
+            var vuforiaController = FindFirstObjectByType<ChemAR.VuforiaAdapter.VuforiaReactionController>();
+            if (vuforiaController != null) vuforiaController.DissociateAllReactions();
+
             // Destroy any leftover spawned 3D molecule visualizers in scene
             var allMols = FindObjectsByType<ChemAR.Render.MoleculeVisualizer>(FindObjectsSortMode.None);
             foreach (var m in allMols)
             {
                 if (m != null) Destroy(m.gameObject);
+            }
+
+            // Reset scale back to 100%
+            SetScale(1.0f);
+
+            // Force refresh all tracked cards to clear any stuck state
+            var allCards = FindObjectsByType<ChemAR.VuforiaAdapter.VuforiaTrackedCard>(FindObjectsSortMode.None);
+            foreach (var c in allCards)
+            {
+                if (c != null) c.ForceReset();
+            }
+
+            // Visual feedback on button
+            if (resetBtnText != null)
+            {
+                StopCoroutine("FlashResetButtonFeedback");
+                StartCoroutine("FlashResetButtonFeedback");
+            }
+        }
+
+        private IEnumerator FlashResetButtonFeedback()
+        {
+            if (resetBtnText != null)
+            {
+                resetBtnText.text = "✓ Resetat!";
+                yield return new WaitForSeconds(1.2f);
+                resetBtnText.text = "↺ Revert";
             }
         }
 
@@ -215,12 +247,8 @@ namespace ChemAR.UI
 
             reactionBottomCard.SetActive(false);
 
-            // 4. Dedicated Floating Reset / Revert Button in top-right screen corner
-            var resetBtnGo = CreateButton("ResetScreenBtn", canvas.transform, new Vector2(0.70f, 0.93f), new Vector2(0.97f, 0.98f), "↺ Revert", defaultFont, new Color(0.12f, 0.16f, 0.25f, 0.88f), 22);
-            resetBtnGo.GetComponent<Button>().onClick.AddListener(TriggerRevertAll);
-
-            // 5. Interactive Scale Controls ([-] 100% [+]) directly below the Revert button
-            var scalePanelGo = CreatePanel("ScaleControlPanel", canvas.transform, new Vector2(0.66f, 0.865f), new Vector2(0.97f, 0.92f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.12f, 0.20f, 0.88f));
+            // 4. Interactive Scale Controls ([-] 100% [+]) placed comfortably below mobile status bar / notch
+            var scalePanelGo = CreatePanel("ScaleControlPanel", canvas.transform, new Vector2(0.66f, 0.875f), new Vector2(0.97f, 0.93f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, new Color(0.08f, 0.12f, 0.20f, 0.92f));
 
             // [-] Button
             var scaleDownBtn = CreateButton("BtnScaleDown", scalePanelGo.transform, new Vector2(0f, 0f), new Vector2(0.32f, 1f), "-", defaultFont, new Color(0.18f, 0.24f, 0.36f, 0.95f), 32);
@@ -235,6 +263,11 @@ namespace ChemAR.UI
             // [+] Button
             var scaleUpBtn = CreateButton("BtnScaleUp", scalePanelGo.transform, new Vector2(0.68f, 0f), new Vector2(1f, 1f), "+", defaultFont, new Color(0.18f, 0.24f, 0.36f, 0.95f), 32);
             scaleUpBtn.GetComponent<Button>().onClick.AddListener(IncreaseScale);
+
+            // 5. Dedicated Floating Reset / Revert Button directly below the Scale panel (safe touch zone)
+            var resetBtnGo = CreateButton("ResetScreenBtn", canvas.transform, new Vector2(0.66f, 0.81f), new Vector2(0.97f, 0.865f), "↺ Revert", defaultFont, new Color(0.16f, 0.22f, 0.34f, 0.95f), 22);
+            resetBtnGo.GetComponent<Button>().onClick.AddListener(TriggerRevertAll);
+            resetBtnText = resetBtnGo.GetComponentInChildren<Text>();
 
             // 4. Editor Quick Toolbar removed - keep screen clean showing only camera feed and AR augmentations
         }

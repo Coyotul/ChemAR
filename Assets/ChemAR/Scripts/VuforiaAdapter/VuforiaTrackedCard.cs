@@ -111,7 +111,9 @@ namespace ChemAR.VuforiaAdapter
 
         private void HandleTargetStatusChanged(ObserverBehaviour obs, TargetStatus status)
         {
-            bool nowTracked = (status.Status == Status.TRACKED || status.Status == Status.EXTENDED_TRACKED);
+            // Only consider tracked when Vuforia genuinely sees the image target in view.
+            // Exclude EXTENDED_TRACKED and LIMITED to prevent false triggers from adjacent markers on printed sheets.
+            bool nowTracked = (status.Status == Status.TRACKED && status.StatusInfo != StatusInfo.LIMITED);
             if (nowTracked != isTracked)
             {
                 isTracked = nowTracked;
@@ -134,6 +136,16 @@ namespace ChemAR.VuforiaAdapter
                     ui.NotifyMarkerTrackingChanged(isTracked);
                 }
             }
+        }
+
+        public void ForceReset()
+        {
+            isReacting = false;
+            if (observer != null)
+            {
+                HandleTargetStatusChanged(observer, observer.TargetStatus);
+            }
+            UpdateVisualState();
         }
 
         public void SetReacting(bool reacting)
