@@ -20,6 +20,16 @@ namespace ChemAR.VuforiaAdapter
 
         private readonly List<ObserverBehaviour> observers = new();
 
+        private void OnEnable()
+        {
+            ChemAR.UI.ChemARUIManager.OnRequestRevertAll += ClearAllMemory;
+        }
+
+        private void OnDisable()
+        {
+            ChemAR.UI.ChemARUIManager.OnRequestRevertAll -= ClearAllMemory;
+        }
+
         private void Start()
         {
             RegisterExistingObservers();
