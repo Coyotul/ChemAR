@@ -138,8 +138,8 @@ namespace ChemAR.VuforiaAdapter
 
         private void HandleTargetStatusChanged(ObserverBehaviour obs, TargetStatus status)
         {
-            // Only accept genuine TRACKED status, rejecting LIMITED and EXTENDED_TRACKED
-            bool valid = (status.Status == Status.TRACKED && status.StatusInfo != StatusInfo.LIMITED);
+            // Only accept genuine TRACKED status, rejecting LIMITED, EXTENDED_TRACKED and NO_POSE
+            bool valid = (status.Status == Status.TRACKED);
             if (valid != rawTracked)
             {
                 rawTracked = valid;
