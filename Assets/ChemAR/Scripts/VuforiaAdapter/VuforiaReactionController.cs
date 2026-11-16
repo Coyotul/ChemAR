@@ -21,20 +21,20 @@ namespace ChemAR.VuforiaAdapter
         public static VuforiaReactionController Instance { get; private set; }
 
         [Header("Reaction Distance Thresholds")]
-        [Tooltip("Minimum distance in meters to prevent overlapping cards / ghost detections (default 7cm)")]
-        [SerializeField] private float minReactionDistance = 0.07f;
+        [Tooltip("Minimum distance in meters to prevent overlapping cards / same physical card false reactions (default 10.5cm)")]
+        [SerializeField] private float minReactionDistance = 0.105f;
 
-        [Tooltip("Distance in meters to trigger molecule synthesis (default 15cm)")]
-        [SerializeField] private float reactionDistance = 0.15f;
+        [Tooltip("Distance in meters to trigger molecule synthesis (default 18cm)")]
+        [SerializeField] private float reactionDistance = 0.18f;
 
-        [Tooltip("Distance in meters to trigger automatic dissociation (default 22cm)")]
-        [SerializeField] private float dissociationDistance = 0.22f;
+        [Tooltip("Distance in meters to trigger automatic dissociation (default 25cm)")]
+        [SerializeField] private float dissociationDistance = 0.25f;
 
-        [Tooltip("Time in seconds cards must stay close before reacting (default 0.85s)")]
-        [SerializeField] private float reactionTriggerDelay = 0.85f;
+        [Tooltip("Time in seconds cards must stay close before reacting (default 1.0s)")]
+        [SerializeField] private float reactionTriggerDelay = 1.0f;
 
         [Tooltip("Grace period in seconds when a card is briefly lost before dissociating")]
-        [SerializeField] private float trackingLostGracePeriod = 1.2f;
+        [SerializeField] private float trackingLostGracePeriod = 1.0f;
 
         [Header("Dependencies (Auto-located if null)")]
         [SerializeField] private ThermalVFXManager thermalVfx;
@@ -96,14 +96,17 @@ namespace ChemAR.VuforiaAdapter
                 var cardA = trackedCards[i];
                 if (cardA == null || !cardA.IsTracked || cardA.IsReacting) continue;
                 // Guard: cardA must be stably confirmed
-                if (cardA.ConfirmedTrackedDuration < 0.35f) continue;
+                if (cardA.ConfirmedTrackedDuration < 0.40f) continue;
 
                 for (int j = i + 1; j < trackedCards.Count; j++)
                 {
                     var cardB = trackedCards[j];
                     if (cardB == null || !cardB.IsTracked || cardB.IsReacting) continue;
                     // Guard: cardB must be stably confirmed
-                    if (cardB.ConfirmedTrackedDuration < 0.35f) continue;
+                    if (cardB.ConfirmedTrackedDuration < 0.40f) continue;
+
+                    // Chemical Identity Guard: cards must represent distinct elements
+                    if (cardA.Symbol == cardB.Symbol) continue;
 
                     // Chemical Validity Guard: verify these elements can react before counting proximity
                     var symbols = new List<string> { cardA.Symbol, cardB.Symbol };
@@ -112,7 +115,7 @@ namespace ChemAR.VuforiaAdapter
 
                     float dist = Vector3.Distance(cardA.transform.position, cardB.transform.position);
 
-                    // Must be within intentional reaction zone: not overlapping (< 7cm) and not too far (> 15cm)
+                    // Must be within intentional reaction zone: not overlapping (< 10.5cm) and not too far (> 18cm)
                     if (dist >= minReactionDistance && dist <= reactionDistance)
                     {
                         var key = GetCardKey(cardA, cardB);

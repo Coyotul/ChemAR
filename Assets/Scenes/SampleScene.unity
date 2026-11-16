@@ -769,9 +769,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Core::ChemAR.Render.AtomVisualizer
   hoverHeight: 0.08
-  bobbingSpeed: 2.2
-  bobbingAmount: 0.012
-  rotationSpeed: 45
 --- !u!4 &43700681
 Transform:
   m_ObjectHideFlags: 0
@@ -1783,10 +1780,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acdfafac63e41cc429893abf64557534, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Vuforia::ChemAR.VuforiaAdapter.VuforiaReactionController
-  reactionDistance: 0.14
-  dissociationDistance: 0.2
-  reactionTriggerDelay: 0.3
-  trackingLostGracePeriod: 1.2
+  minReactionDistance: 0.105
+  reactionDistance: 0.18
+  dissociationDistance: 0.25
+  reactionTriggerDelay: 1.0
+  trackingLostGracePeriod: 1.0
   thermalVfx: {fileID: 0}
   uiManager: {fileID: 0}
 --- !u!114 &90025655
@@ -2182,9 +2180,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Core::ChemAR.Render.AtomVisualizer
   hoverHeight: 0.08
-  bobbingSpeed: 2.2
-  bobbingAmount: 0.012
-  rotationSpeed: 45
 --- !u!4 &110131987
 Transform:
   m_ObjectHideFlags: 0
@@ -17041,9 +17036,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000006}
   - component: {fileID: 1000000005}
-  - component: {fileID: 1000000004}
   - component: {fileID: 1000000003}
-  - component: {fileID: 1000000002}
+  - component: {fileID: 1000000007}
   m_Layer: 0
   m_Name: ImageTarget_H
   m_TagString: Untagged
@@ -17051,25 +17045,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1000000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
-  mObserverBehaviour: {fileID: 1000000005}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: Marker_H
-  mDatasetName: 
-  mCastedBehaviour: {fileID: 1000000005}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &1000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17086,50 +17061,10 @@ MonoBehaviour:
   cardWidth: 0.12
   childAtomVisualizer: {fileID: 1510952506}
   autoCreateVisualizerIfMissing: 1
---- !u!114 &1000000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886328de6a5c14cbb85854fdf1a5085b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VuforiaScripts::DefaultObserverEventHandler
-  StatusFilter: 0
-  UsePoseSmoothing: 0
-  AnimationCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 3.3333333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.3
-      value: 1
-      inSlope: 3.3333333
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  OnTargetFound:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTargetLost:
-    m_PersistentCalls:
-      m_Calls: []
+  trackingConfirmationTime: 0.25
+  trackingLostDebounceTime: 0.35
+  minSpatialSeparation: 0.1
+  enableOpticalColorVerification: 1
 --- !u!114 &1000000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17152,11 +17087,11 @@ MonoBehaviour:
   mImageTargetType: 3
   mWidth: 0.12
   mHeight: 0.12
-  mRuntimeTexture: {fileID: 2800000, guid: 812608eda2bd06849b1ea2766fe33349, type: 3}
+  mRuntimeTexture: {fileID: 2800000, guid: e5c13d42cda740b2a2340853906a255c, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 1000000002}
+  mPreview: {fileID: 1000000007}
 --- !u!4 &1000000006
 Transform:
   m_ObjectHideFlags: 0
@@ -17173,6 +17108,25 @@ Transform:
   - {fileID: 1510952507}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
+  mObserverBehaviour: {fileID: 1000000005}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: Marker_H
+  mDatasetName: 
+  mCastedBehaviour: {fileID: 1000000005}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &1000000011
 GameObject:
   m_ObjectHideFlags: 0
@@ -17183,9 +17137,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000016}
   - component: {fileID: 1000000015}
-  - component: {fileID: 1000000014}
   - component: {fileID: 1000000013}
-  - component: {fileID: 1000000012}
+  - component: {fileID: 1000000017}
   m_Layer: 0
   m_Name: ImageTarget_O
   m_TagString: Untagged
@@ -17193,25 +17146,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1000000012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000011}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
-  mObserverBehaviour: {fileID: 1000000015}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: Marker_O
-  mDatasetName: 
-  mCastedBehaviour: {fileID: 1000000015}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &1000000013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17228,50 +17162,10 @@ MonoBehaviour:
   cardWidth: 0.12
   childAtomVisualizer: {fileID: 1990152874}
   autoCreateVisualizerIfMissing: 1
---- !u!114 &1000000014
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000011}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886328de6a5c14cbb85854fdf1a5085b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VuforiaScripts::DefaultObserverEventHandler
-  StatusFilter: 0
-  UsePoseSmoothing: 0
-  AnimationCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 3.3333333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.3
-      value: 1
-      inSlope: 3.3333333
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  OnTargetFound:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTargetLost:
-    m_PersistentCalls:
-      m_Calls: []
+  trackingConfirmationTime: 0.25
+  trackingLostDebounceTime: 0.35
+  minSpatialSeparation: 0.1
+  enableOpticalColorVerification: 1
 --- !u!114 &1000000015
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17294,11 +17188,11 @@ MonoBehaviour:
   mImageTargetType: 3
   mWidth: 0.12
   mHeight: 0.12
-  mRuntimeTexture: {fileID: 2800000, guid: 9a035ba3e59e29646a1985080fd8f0ee, type: 3}
+  mRuntimeTexture: {fileID: 2800000, guid: 720dcadfe57a48efa8aaf9f9271b1c3b, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 1000000012}
+  mPreview: {fileID: 1000000017}
 --- !u!4 &1000000016
 Transform:
   m_ObjectHideFlags: 0
@@ -17315,6 +17209,25 @@ Transform:
   - {fileID: 1990152875}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1000000017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
+  mObserverBehaviour: {fileID: 1000000015}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: Marker_O
+  mDatasetName: 
+  mCastedBehaviour: {fileID: 1000000015}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &1000000021
 GameObject:
   m_ObjectHideFlags: 0
@@ -17325,9 +17238,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000026}
   - component: {fileID: 1000000025}
-  - component: {fileID: 1000000024}
   - component: {fileID: 1000000023}
-  - component: {fileID: 1000000022}
+  - component: {fileID: 1000000027}
   m_Layer: 0
   m_Name: ImageTarget_N
   m_TagString: Untagged
@@ -17335,25 +17247,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1000000022
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000021}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
-  mObserverBehaviour: {fileID: 1000000025}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: Marker_N
-  mDatasetName: 
-  mCastedBehaviour: {fileID: 1000000025}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &1000000023
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17370,50 +17263,10 @@ MonoBehaviour:
   cardWidth: 0.12
   childAtomVisualizer: {fileID: 110131986}
   autoCreateVisualizerIfMissing: 1
---- !u!114 &1000000024
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000021}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886328de6a5c14cbb85854fdf1a5085b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VuforiaScripts::DefaultObserverEventHandler
-  StatusFilter: 0
-  UsePoseSmoothing: 0
-  AnimationCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 3.3333333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.3
-      value: 1
-      inSlope: 3.3333333
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  OnTargetFound:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTargetLost:
-    m_PersistentCalls:
-      m_Calls: []
+  trackingConfirmationTime: 0.25
+  trackingLostDebounceTime: 0.35
+  minSpatialSeparation: 0.1
+  enableOpticalColorVerification: 1
 --- !u!114 &1000000025
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17436,11 +17289,11 @@ MonoBehaviour:
   mImageTargetType: 3
   mWidth: 0.12
   mHeight: 0.12
-  mRuntimeTexture: {fileID: 2800000, guid: 6ed66078db426fc46a15dd13fdd617e8, type: 3}
+  mRuntimeTexture: {fileID: 2800000, guid: ba815a01c85f485baff7fb85bd88554b, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 1000000022}
+  mPreview: {fileID: 1000000027}
 --- !u!4 &1000000026
 Transform:
   m_ObjectHideFlags: 0
@@ -17457,6 +17310,25 @@ Transform:
   - {fileID: 110131987}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1000000027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
+  mObserverBehaviour: {fileID: 1000000025}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: Marker_N
+  mDatasetName: 
+  mCastedBehaviour: {fileID: 1000000025}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &1000000031
 GameObject:
   m_ObjectHideFlags: 0
@@ -17467,9 +17339,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000036}
   - component: {fileID: 1000000035}
-  - component: {fileID: 1000000034}
   - component: {fileID: 1000000033}
-  - component: {fileID: 1000000032}
+  - component: {fileID: 1000000037}
   m_Layer: 0
   m_Name: ImageTarget_Na
   m_TagString: Untagged
@@ -17477,25 +17348,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1000000032
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000031}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
-  mObserverBehaviour: {fileID: 1000000035}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: Marker_Na
-  mDatasetName: 
-  mCastedBehaviour: {fileID: 1000000035}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &1000000033
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17512,50 +17364,10 @@ MonoBehaviour:
   cardWidth: 0.12
   childAtomVisualizer: {fileID: 43700680}
   autoCreateVisualizerIfMissing: 1
---- !u!114 &1000000034
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000031}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886328de6a5c14cbb85854fdf1a5085b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VuforiaScripts::DefaultObserverEventHandler
-  StatusFilter: 0
-  UsePoseSmoothing: 0
-  AnimationCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 3.3333333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.3
-      value: 1
-      inSlope: 3.3333333
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  OnTargetFound:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTargetLost:
-    m_PersistentCalls:
-      m_Calls: []
+  trackingConfirmationTime: 0.25
+  trackingLostDebounceTime: 0.35
+  minSpatialSeparation: 0.1
+  enableOpticalColorVerification: 1
 --- !u!114 &1000000035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17578,11 +17390,11 @@ MonoBehaviour:
   mImageTargetType: 3
   mWidth: 0.12
   mHeight: 0.12
-  mRuntimeTexture: {fileID: 2800000, guid: 0b679c9ead3e574419e410f08632947c, type: 3}
+  mRuntimeTexture: {fileID: 2800000, guid: 2f01b58ab55b406cb188a13ea25ac05c, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 1000000032}
+  mPreview: {fileID: 1000000037}
 --- !u!4 &1000000036
 Transform:
   m_ObjectHideFlags: 0
@@ -17599,6 +17411,25 @@ Transform:
   - {fileID: 43700681}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1000000037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
+  mObserverBehaviour: {fileID: 1000000035}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: Marker_Na
+  mDatasetName: 
+  mCastedBehaviour: {fileID: 1000000035}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &1000000041
 GameObject:
   m_ObjectHideFlags: 0
@@ -17609,9 +17440,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000046}
   - component: {fileID: 1000000045}
-  - component: {fileID: 1000000044}
   - component: {fileID: 1000000043}
-  - component: {fileID: 1000000042}
+  - component: {fileID: 1000000047}
   m_Layer: 0
   m_Name: ImageTarget_Cl
   m_TagString: Untagged
@@ -17619,25 +17449,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1000000042
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000041}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
-  mObserverBehaviour: {fileID: 1000000045}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: Marker_Cl
-  mDatasetName: 
-  mCastedBehaviour: {fileID: 1000000045}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &1000000043
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17654,50 +17465,10 @@ MonoBehaviour:
   cardWidth: 0.12
   childAtomVisualizer: {fileID: 1178551987}
   autoCreateVisualizerIfMissing: 1
---- !u!114 &1000000044
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000041}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886328de6a5c14cbb85854fdf1a5085b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VuforiaScripts::DefaultObserverEventHandler
-  StatusFilter: 0
-  UsePoseSmoothing: 0
-  AnimationCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 3.3333333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.3
-      value: 1
-      inSlope: 3.3333333
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  OnTargetFound:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTargetLost:
-    m_PersistentCalls:
-      m_Calls: []
+  trackingConfirmationTime: 0.25
+  trackingLostDebounceTime: 0.35
+  minSpatialSeparation: 0.1
+  enableOpticalColorVerification: 1
 --- !u!114 &1000000045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17720,11 +17491,11 @@ MonoBehaviour:
   mImageTargetType: 3
   mWidth: 0.12
   mHeight: 0.12
-  mRuntimeTexture: {fileID: 2800000, guid: decfbb12c54eec940b4dfa1a0fe57e26, type: 3}
+  mRuntimeTexture: {fileID: 2800000, guid: a4635afc43e148cc8e79d6cc724a35b4, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 1000000042}
+  mPreview: {fileID: 1000000047}
 --- !u!4 &1000000046
 Transform:
   m_ObjectHideFlags: 0
@@ -17741,6 +17512,25 @@ Transform:
   - {fileID: 1178551988}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1000000047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
+  mObserverBehaviour: {fileID: 1000000045}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: Marker_Cl
+  mDatasetName: 
+  mCastedBehaviour: {fileID: 1000000045}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &1000000051
 GameObject:
   m_ObjectHideFlags: 0
@@ -17751,9 +17541,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1000000056}
   - component: {fileID: 1000000055}
-  - component: {fileID: 1000000054}
   - component: {fileID: 1000000053}
-  - component: {fileID: 1000000052}
+  - component: {fileID: 1000000057}
   m_Layer: 0
   m_Name: ImageTarget_C
   m_TagString: Untagged
@@ -17761,25 +17550,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1000000052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000051}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
-  mObserverBehaviour: {fileID: 1000000055}
-  mHiddenRoot: {fileID: 0}
-  mTargetName: Marker_C
-  mDatasetName: 
-  mCastedBehaviour: {fileID: 1000000055}
-  mMeshFilter: {fileID: 0}
-  mMeshRenderer: {fileID: 0}
 --- !u!114 &1000000053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17796,50 +17566,10 @@ MonoBehaviour:
   cardWidth: 0.12
   childAtomVisualizer: {fileID: 1455877673}
   autoCreateVisualizerIfMissing: 1
---- !u!114 &1000000054
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000051}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 886328de6a5c14cbb85854fdf1a5085b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VuforiaScripts::DefaultObserverEventHandler
-  StatusFilter: 0
-  UsePoseSmoothing: 0
-  AnimationCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 3.3333333
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.3
-      value: 1
-      inSlope: 3.3333333
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  OnTargetFound:
-    m_PersistentCalls:
-      m_Calls: []
-  OnTargetLost:
-    m_PersistentCalls:
-      m_Calls: []
+  trackingConfirmationTime: 0.25
+  trackingLostDebounceTime: 0.35
+  minSpatialSeparation: 0.1
+  enableOpticalColorVerification: 1
 --- !u!114 &1000000055
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17862,11 +17592,11 @@ MonoBehaviour:
   mImageTargetType: 3
   mWidth: 0.12
   mHeight: 0.12
-  mRuntimeTexture: {fileID: 2800000, guid: ffd26b8e3439c574591fac63b3574847, type: 3}
+  mRuntimeTexture: {fileID: 2800000, guid: 2f7d0cd5801b4fc6a0dfd108fa6bcfb4, type: 3}
   mMotionHint: 1
   mTrackingOptimization: 0
   mTrackingOptimizationNeedsUpgrade: 0
-  mPreview: {fileID: 1000000052}
+  mPreview: {fileID: 1000000057}
 --- !u!4 &1000000056
 Transform:
   m_ObjectHideFlags: 0
@@ -17883,6 +17613,25 @@ Transform:
   - {fileID: 1455877674}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &1000000057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1778676317, guid: 8a9a760f95896c34689febc965510927, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vuforia.Unity.Engine.dll::Vuforia.ImageTargetPreview
+  mObserverBehaviour: {fileID: 1000000055}
+  mHiddenRoot: {fileID: 0}
+  mTargetName: Marker_C
+  mDatasetName: 
+  mCastedBehaviour: {fileID: 1000000055}
+  mMeshFilter: {fileID: 0}
+  mMeshRenderer: {fileID: 0}
 --- !u!1 &1006270485
 GameObject:
   m_ObjectHideFlags: 0
@@ -19731,9 +19480,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Core::ChemAR.Render.AtomVisualizer
   hoverHeight: 0.08
-  bobbingSpeed: 2.2
-  bobbingAmount: 0.012
-  rotationSpeed: 45
 --- !u!4 &1178551988
 Transform:
   m_ObjectHideFlags: 0
@@ -23894,9 +23640,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Core::ChemAR.Render.AtomVisualizer
   hoverHeight: 0.08
-  bobbingSpeed: 2.2
-  bobbingAmount: 0.012
-  rotationSpeed: 45
 --- !u!4 &1455877674
 Transform:
   m_ObjectHideFlags: 0
@@ -24242,9 +23985,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Core::ChemAR.Render.AtomVisualizer
   hoverHeight: 0.08
-  bobbingSpeed: 2.2
-  bobbingAmount: 0.012
-  rotationSpeed: 45
 --- !u!4 &1510952507
 Transform:
   m_ObjectHideFlags: 0
@@ -32426,9 +32166,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChemAR.Core::ChemAR.Render.AtomVisualizer
   hoverHeight: 0.08
-  bobbingSpeed: 2.2
-  bobbingAmount: 0.012
-  rotationSpeed: 45
 --- !u!4 &1990152875
 Transform:
   m_ObjectHideFlags: 0

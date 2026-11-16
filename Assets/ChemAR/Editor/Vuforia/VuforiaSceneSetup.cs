@@ -238,7 +238,11 @@ namespace ChemAR.Vuforia.Editor
 
         private static void SetupSingleImageTarget(string symbol, int index)
         {
-            string texturePath = $"Assets/ChemAR/Textures/Markers/Marker_{symbol}.png";
+            string texturePath = $"Assets/ChemAR/Textures/VuforiaTargets/Target_{symbol}.png";
+            if (!File.Exists(Path.Combine(Application.dataPath, $"ChemAR/Textures/VuforiaTargets/Target_{symbol}.png")))
+            {
+                texturePath = $"Assets/ChemAR/Textures/Markers/Marker_{symbol}.png";
+            }
             EnsureTextureSettings(texturePath);
 
             var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
@@ -307,10 +311,13 @@ namespace ChemAR.Vuforia.Editor
 
             so.ApplyModifiedProperties();
 
-            // Default Observer Event Handler (Tracked only to prevent false positives from adjacent markers)
+            // Explicitly remove DefaultObserverEventHandler so VuforiaTrackedCard has exclusive authority
+            // over activating the 3D atom meshes, preventing false/unconfirmed elements from flashing
             var eventHandler = targetGo.GetComponent<DefaultObserverEventHandler>();
-            if (eventHandler == null) eventHandler = targetGo.AddComponent<DefaultObserverEventHandler>();
-            eventHandler.StatusFilter = DefaultObserverEventHandler.TrackingStatusFilter.Tracked;
+            if (eventHandler != null)
+            {
+                Undo.DestroyObjectImmediate(eventHandler);
+            }
 
             // VuforiaTrackedCard
             var card = targetGo.GetComponent<VuforiaTrackedCard>();
@@ -360,6 +367,18 @@ namespace ChemAR.Vuforia.Editor
             {
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 modified = true;
+            }
+
+            // Ensure Android and Standalone platform settings are also uncompressed
+            foreach (var platform in new[] { "Android", "Standalone" })
+            {
+                var settings = importer.GetPlatformTextureSettings(platform);
+                if (settings.overridden && settings.textureCompression != TextureImporterCompression.Uncompressed)
+                {
+                    settings.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.SetPlatformTextureSettings(settings);
+                    modified = true;
+                }
             }
 
             if (modified)
