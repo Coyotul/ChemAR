@@ -21,14 +21,17 @@ namespace ChemAR.VuforiaAdapter
         public static VuforiaReactionController Instance { get; private set; }
 
         [Header("Reaction Distance Thresholds")]
-        [Tooltip("Distance in meters to trigger molecule synthesis (default 14cm)")]
-        [SerializeField] private float reactionDistance = 0.14f;
+        [Tooltip("Minimum distance in meters to prevent overlapping cards / ghost detections (default 7cm)")]
+        [SerializeField] private float minReactionDistance = 0.07f;
 
-        [Tooltip("Distance in meters to trigger automatic dissociation (default 20cm)")]
-        [SerializeField] private float dissociationDistance = 0.20f;
+        [Tooltip("Distance in meters to trigger molecule synthesis (default 15cm)")]
+        [SerializeField] private float reactionDistance = 0.15f;
 
-        [Tooltip("Time in seconds cards must stay close before reacting")]
-        [SerializeField] private float reactionTriggerDelay = 0.30f;
+        [Tooltip("Distance in meters to trigger automatic dissociation (default 22cm)")]
+        [SerializeField] private float dissociationDistance = 0.22f;
+
+        [Tooltip("Time in seconds cards must stay close before reacting (default 0.85s)")]
+        [SerializeField] private float reactionTriggerDelay = 0.85f;
 
         [Tooltip("Grace period in seconds when a card is briefly lost before dissociating")]
         [SerializeField] private float trackingLostGracePeriod = 1.2f;
@@ -91,23 +94,33 @@ namespace ChemAR.VuforiaAdapter
             for (int i = 0; i < trackedCards.Count; i++)
             {
                 var cardA = trackedCards[i];
-                if (!cardA.IsTracked || cardA.IsReacting) continue;
+                if (cardA == null || !cardA.IsTracked || cardA.IsReacting) continue;
+                // Guard: cardA must be stably confirmed
+                if (cardA.ConfirmedTrackedDuration < 0.35f) continue;
 
                 for (int j = i + 1; j < trackedCards.Count; j++)
                 {
                     var cardB = trackedCards[j];
-                    if (!cardB.IsTracked || cardB.IsReacting) continue;
+                    if (cardB == null || !cardB.IsTracked || cardB.IsReacting) continue;
+                    // Guard: cardB must be stably confirmed
+                    if (cardB.ConfirmedTrackedDuration < 0.35f) continue;
+
+                    // Chemical Validity Guard: verify these elements can react before counting proximity
+                    var symbols = new List<string> { cardA.Symbol, cardB.Symbol };
+                    var reaction = ChemistryDatabase.Instance.FindReaction(symbols);
+                    if (reaction == null) continue;
 
                     float dist = Vector3.Distance(cardA.transform.position, cardB.transform.position);
 
-                    if (dist <= reactionDistance)
+                    // Must be within intentional reaction zone: not overlapping (< 7cm) and not too far (> 15cm)
+                    if (dist >= minReactionDistance && dist <= reactionDistance)
                     {
                         var key = GetCardKey(cardA, cardB);
                         proximityTimer[key] = proximityTimer.GetValueOrDefault(key, 0f) + Time.deltaTime;
 
                         if (proximityTimer[key] >= reactionTriggerDelay)
                         {
-                            TryTriggerReaction(cardA, cardB);
+                            TryTriggerReaction(cardA, cardB, reaction);
                             proximityTimer[key] = 0f;
                         }
                     }
@@ -120,32 +133,23 @@ namespace ChemAR.VuforiaAdapter
             }
         }
 
-        private void TryTriggerReaction(VuforiaTrackedCard cardA, VuforiaTrackedCard cardB)
+        private void TryTriggerReaction(VuforiaTrackedCard cardA, VuforiaTrackedCard cardB, ReactionData reaction)
         {
-            var symbols = new List<string> { cardA.Symbol, cardB.Symbol };
-            var reaction = ChemistryDatabase.Instance.FindReaction(symbols);
-
             if (reaction == null) return;
 
-            Debug.Log($"[VuforiaReactionController] REACȚIE SINTETIZATĂ: {reaction.reactionEquation} între {cardA.Symbol} și {cardB.Symbol}");
+            Debug.Log($"<color=#00e676>[VuforiaReactionController] REACȚIE SINTETIZATĂ: {reaction.reactionEquation} între {cardA.Symbol} și {cardB.Symbol}</color>");
 
-            // Set cards reacting (hides individual atoms)
+            // Set cards reacting
             cardA.SetReacting(true);
             cardB.SetReacting(true);
 
             // Compute midpoint in world space
             Vector3 midpoint = (cardA.transform.position + cardB.transform.position) * 0.5f;
 
-            // Spawn 3D molecule visualizer
+            // Spawn 3D molecule visualizer (clean, simple geometry + label)
             var molGo = new GameObject($"Molecule_{reaction.productFormula}");
             var molVis = molGo.AddComponent<MoleculeVisualizer>();
             molVis.Initialize(reaction, midpoint);
-
-            // Trigger thermal particle burst (exothermic heat shockwave / endothermic frost)
-            if (thermalVfx != null)
-            {
-                thermalVfx.TriggerThermalEffect(reaction, midpoint);
-            }
 
             // Show bottom reaction info UI
             if (uiManager != null)

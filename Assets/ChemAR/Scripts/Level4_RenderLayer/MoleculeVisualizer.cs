@@ -35,26 +35,6 @@ namespace ChemAR.Render
             BuildGeometry(reactionData);
             CreateFloatingLabel(reactionData);
 
-            // Intro scale animation
-            StartCoroutine(AnimateSpawn());
-        }
-
-        private System.Collections.IEnumerator AnimateSpawn()
-        {
-            float duration = 0.4f;
-            float elapsed = 0f;
-            moleculeRoot.localScale = Vector3.zero;
-
-            while (elapsed < duration)
-            {
-                elapsed += Time.deltaTime;
-                float t = elapsed / duration;
-                // Elastic / smooth step to 50% scale
-                float s = Mathf.Sin(t * Mathf.PI * 0.5f);
-                moleculeRoot.localScale = Vector3.one * (s * 0.55f);
-                yield return null;
-            }
-
             moleculeRoot.localScale = Vector3.one * 0.55f;
         }
 
@@ -213,15 +193,13 @@ namespace ChemAR.Render
         {
             if (moleculeRoot == null) return;
 
-            // Idle rotation and floating
-            moleculeRoot.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
+            // Stable static hovering above cards
+            moleculeRoot.localPosition = new Vector3(0, 0.055f, 0);
 
-            float bob = Mathf.Sin((Time.time - spawnTime) * floatingBobSpeed) * floatingBobAmount;
-            moleculeRoot.localPosition = new Vector3(0, 0.055f + bob, 0);
-
-            // Billboard badge to camera
+            // Billboard badge facing camera cleanly
             if (formulaBadge != null && Camera.main != null)
             {
+                formulaBadge.transform.position = moleculeRoot.position + Camera.main.transform.up * (0.075f * ChemARUIManager.CurrentScale);
                 Vector3 toCam = formulaBadge.transform.position - Camera.main.transform.position;
                 if (toCam.sqrMagnitude > 0.0001f)
                 {
