@@ -14,6 +14,7 @@ namespace ChemAR.VuforiaAdapter
         public VuforiaTrackedCard cardB;
         public MoleculeVisualizer moleculeVisualizer;
         public float startTimestamp;
+        public float lostTimestamp;
     }
 
     public class VuforiaReactionController : MonoBehaviour
@@ -189,23 +190,29 @@ namespace ChemAR.VuforiaAdapter
             {
                 var act = activeReactions[i];
 
-                // If BOTH cards lost tracking -> dissociate immediately without waiting
-                if (!act.cardA.IsTracked && !act.cardB.IsTracked)
-                {
-                    Debug.Log($"[VuforiaReactionController] Ambele cartonașe au fost ascunse. Disociere imediată pentru {act.reaction.reactionEquation}.");
-                    DissociateReaction(act);
-                    continue;
-                }
-
-                // If either card lost tracking OR is no longer visible in camera -> dissociate immediately!
                 bool aLost = !act.cardA.IsTracked || !act.cardA.IsVisibleInCamera();
                 bool bLost = !act.cardB.IsTracked || !act.cardB.IsVisibleInCamera();
 
                 if (aLost || bLost)
                 {
-                    Debug.Log($"[VuforiaReactionController] Cartonaș pierdut sau ieșit din cadru. Disociere automată pentru {act.reaction.reactionEquation}.");
-                    DissociateReaction(act);
-                    continue;
+                    if (act.lostTimestamp <= 0f)
+                    {
+                        act.lostTimestamp = Time.time;
+                    }
+
+                    // Grace period check: do not instantly tear down reaction on single-frame drops
+                    float grace = (aLost && bLost) ? 0.6f : trackingLostGracePeriod;
+                    if (Time.time - act.lostTimestamp >= grace)
+                    {
+                        Debug.Log($"[VuforiaReactionController] Cartonaș pierdut sau ieșit din cadru (> {grace:F1}s). Disociere automată pentru {act.reaction.reactionEquation}.");
+                        DissociateReaction(act);
+                        continue;
+                    }
+                }
+                else
+                {
+                    // Both cards stably tracked: reset lost timer
+                    act.lostTimestamp = 0f;
                 }
 
                 // Check distance between cards
@@ -218,11 +225,11 @@ namespace ChemAR.VuforiaAdapter
                     continue;
                 }
 
-                // Update molecule position to stay centered between cards
+                // Update molecule position to stay centered between cards with smooth interpolation
                 if (act.moleculeVisualizer != null)
                 {
                     Vector3 midpoint = (act.cardA.transform.position + act.cardB.transform.position) * 0.5f;
-                    act.moleculeVisualizer.transform.position = midpoint;
+                    act.moleculeVisualizer.transform.position = Vector3.Lerp(act.moleculeVisualizer.transform.position, midpoint, Time.deltaTime * 18f);
                 }
             }
         }

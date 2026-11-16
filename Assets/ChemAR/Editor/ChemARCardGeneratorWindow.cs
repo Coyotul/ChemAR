@@ -116,23 +116,24 @@ namespace ChemAR.Editor
 
             string folder = Path.Combine(Application.dataPath, "ChemAR", "Textures", "Markers");
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            string folderTargets = Path.Combine(Application.dataPath, "ChemAR", "Textures", "VuforiaTargets");
+            if (!Directory.Exists(folderTargets)) Directory.CreateDirectory(folderTargets);
 
             string fileName = $"Marker_{cleanSymbol}.png";
+            string targetFileName = $"Target_{cleanSymbol}.png";
             string fullPath = Path.Combine(folder, fileName);
+            string targetFullPath = Path.Combine(folderTargets, targetFileName);
             File.WriteAllBytes(fullPath, bytes);
+            File.WriteAllBytes(targetFullPath, bytes);
 
             string relativePath = $"Assets/ChemAR/Textures/Markers/{fileName}";
+            string relativeTargetPath = $"Assets/ChemAR/Textures/VuforiaTargets/{targetFileName}";
             AssetDatabase.ImportAsset(relativePath);
+            AssetDatabase.ImportAsset(relativeTargetPath);
 
             // Configure texture import settings for AR tracking
-            var importer = AssetImporter.GetAtPath(relativePath) as TextureImporter;
-            if (importer != null)
-            {
-                importer.textureType = TextureImporterType.Default;
-                importer.isReadable = true;
-                importer.maxTextureSize = 1024;
-                importer.SaveAndReimport();
-            }
+            ConfigureImporter(relativePath);
+            ConfigureImporter(relativeTargetPath);
 
             // Optionally add to ScriptableObject
             if (addToDatabase)
@@ -172,6 +173,20 @@ namespace ChemAR.Editor
             var obj = AssetDatabase.LoadAssetAtPath<Object>(relativePath);
             Selection.activeObject = obj;
             EditorGUIUtility.PingObject(obj);
+        }
+
+        private static void ConfigureImporter(string assetPath)
+        {
+            var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.isReadable = true;
+                importer.maxTextureSize = 1024;
+                importer.npotScale = TextureImporterNPOTScale.None;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
         }
 
         private void DrawRectangle(Texture2D tex, int x, int y, int w, int h, Color borderCol, int borderWidth, Color fillCol)

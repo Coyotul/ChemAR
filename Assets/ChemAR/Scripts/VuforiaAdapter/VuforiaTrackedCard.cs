@@ -22,14 +22,14 @@ namespace ChemAR.VuforiaAdapter
         [SerializeField] private bool autoCreateVisualizerIfMissing = true;
 
         [Header("Stability Guards")]
-        [Tooltip("Time in seconds the marker must be continuously detected before confirming (default 0.20s)")]
-        [SerializeField] private float trackingConfirmationTime = 0.20f;
+        [Tooltip("Time in seconds the marker must be continuously detected before confirming (default 0.15s)")]
+        [SerializeField] private float trackingConfirmationTime = 0.15f;
 
-        [Tooltip("Time in seconds the marker must be continuously lost before declaring lost (default 0.35s)")]
-        [SerializeField] private float trackingLostDebounceTime = 0.35f;
+        [Tooltip("Time in seconds the marker must be continuously lost before declaring lost (default 0.45s)")]
+        [SerializeField] private float trackingLostDebounceTime = 0.45f;
 
-        [Tooltip("Minimum distance in meters from another active card to prevent ghost overlap detections (default 10cm)")]
-        [SerializeField] private float minSpatialSeparation = 0.10f;
+        [Tooltip("Minimum distance in meters from another active card to prevent ghost overlap detections (default 12cm)")]
+        [SerializeField] private float minSpatialSeparation = 0.12f;
 
         [Header("Optical Verification")]
         [Tooltip("Validate that the observed color matches the expected element family (e.g. blue for H/N, red for O, green for Cl)")]
@@ -180,66 +180,68 @@ namespace ChemAR.VuforiaAdapter
         public bool IsVisibleInCamera()
         {
             var cam = Camera.main;
-            if (cam == null) return false;
+            if (cam == null) return true; // Fail-open if camera not ready
 
             Vector3 cardPos = transform.position;
             Vector3 vp = cam.WorldToViewportPoint(cardPos);
 
-            // 1. Must be in front of camera (distance between 0.08m and 2.5m)
-            if (vp.z < 0.08f || vp.z > 2.5f) return false;
+            // 1. Must be in front of camera (distance between 0.04m and 3.5m)
+            if (vp.z < 0.04f || vp.z > 3.5f) return false;
 
-            // 2. Must be within visible screen area (with 4% border margin)
-            if (vp.x < 0.04f || vp.x > 0.96f || vp.y < 0.04f || vp.y > 0.96f) return false;
+            // 2. Relaxed screen area margin (-10% to 110%) to prevent edge flickering
+            if (vp.x < -0.10f || vp.x > 1.10f || vp.y < -0.10f || vp.y > 1.10f) return false;
 
-            // 3. Card face normal (transform.up in Vuforia Image Targets) must point towards camera
+            // 3. Card face normal (transform.up in Vuforia Image Targets) facing generally towards camera
             Vector3 toCam = (cam.transform.position - cardPos).normalized;
-            if (Vector3.Dot(transform.up, toCam) < 0.08f) return false;
+            if (Vector3.Dot(transform.up, toCam) < -0.15f) return false;
 
             return true;
         }
 
         private void HandleTargetStatusChanged(ObserverBehaviour obs, TargetStatus status)
         {
-            // Only accept genuine TRACKED status AND physical presence in camera frustum
-            bool valid = (status.Status == Status.TRACKED) && IsVisibleInCamera();
-            if (!valid)
-            {
-                if (isTracked) SetTrackedConfirmed(false);
-                rawTracked = false;
-                isColorVerified = false;
-                if (opticalSamplingCoroutine != null)
-                {
-                    StopCoroutine(opticalSamplingCoroutine);
-                    opticalSamplingCoroutine = null;
-                }
-            }
+            // Note: Debounce in Update() smoothly manages transitions between TRACKED,
+            // EXTENDED_TRACKED and brief tracking dropouts to prevent flickering.
         }
 
         private void Update()
         {
             // 1. Continuous physical camera visibility check + Observer status check
             bool inCam = IsVisibleInCamera();
-            bool obsTracked = (observer != null && observer.TargetStatus.Status == Status.TRACKED);
+            bool obsTracked = observer != null &&
+                (observer.TargetStatus.Status == Status.TRACKED ||
+                 observer.TargetStatus.Status == Status.EXTENDED_TRACKED);
             bool actuallyValid = inCam && obsTracked;
 
             if (!actuallyValid)
             {
-                // Immediately drop tracking if card leaves the screen or observer drops
-                if (isTracked)
+                // Start or advance tracking lost debounce timer to prevent instant frame-drop flicker
+                if (rawLostStartTime == 0f)
                 {
-                    SetTrackedConfirmed(false);
+                    rawLostStartTime = Time.time;
                 }
-                rawTracked = false;
-                isColorVerified = false;
-                if (opticalSamplingCoroutine != null)
+
+                if (Time.time - rawLostStartTime >= trackingLostDebounceTime)
                 {
-                    StopCoroutine(opticalSamplingCoroutine);
-                    opticalSamplingCoroutine = null;
+                    if (isTracked)
+                    {
+                        SetTrackedConfirmed(false);
+                    }
+                    rawTracked = false;
+                    isColorVerified = false;
+                    if (opticalSamplingCoroutine != null)
+                    {
+                        StopCoroutine(opticalSamplingCoroutine);
+                        opticalSamplingCoroutine = null;
+                    }
                 }
                 return;
             }
 
-            // 2. Card is physically visible and Vuforia observer is TRACKED
+            // Valid this frame: clear lost debounce timer
+            rawLostStartTime = 0f;
+
+            // 2. Card is physically visible and Vuforia observer is TRACKED / EXTENDED_TRACKED
             if (!rawTracked)
             {
                 rawTracked = true;
@@ -252,7 +254,13 @@ namespace ChemAR.VuforiaAdapter
                 }
             }
 
-            // 3. Confirmation debounce + Optical check + Spatial mutex
+            // 3. Fallback confirmation: if tracked steadily for confirmation + 0.20s without dispute, confirm automatically
+            if (rawTracked && !isColorVerified && (Time.time - rawTrackedStartTime >= trackingConfirmationTime + 0.20f))
+            {
+                isColorVerified = true;
+            }
+
+            // 4. Confirmation debounce + Optical check + Spatial mutex
             if (!isTracked && rawTracked)
             {
                 if (Time.time - rawTrackedStartTime >= trackingConfirmationTime)
@@ -269,6 +277,20 @@ namespace ChemAR.VuforiaAdapter
             else if (isTracked && rawTracked)
             {
                 lastTrackedTime = Time.time;
+
+                // CONTINUOUS SPATIAL CONFLICT RESOLUTION:
+                // Guarantees that multiple elements NEVER appear at the same location!
+                CheckAndResolveSpatialConflict();
+            }
+        }
+
+        private void LateUpdate()
+        {
+            // Smooth atom visualizer to eliminate high-frequency Vuforia micro-jitter
+            if (isTracked && childAtomVisualizer != null && childAtomVisualizer.gameObject.activeSelf)
+            {
+                childAtomVisualizer.transform.position = Vector3.Lerp(childAtomVisualizer.transform.position, transform.position, Time.deltaTime * 20f);
+                childAtomVisualizer.transform.rotation = Quaternion.Slerp(childAtomVisualizer.transform.rotation, transform.rotation, Time.deltaTime * 20f);
             }
         }
 
@@ -304,6 +326,54 @@ namespace ChemAR.VuforiaAdapter
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Continuously enforces mutual exclusion: no two active elements can exist within minSpatialSeparation.
+        /// If two elements end up in the same spot, the one with higher tracking stability wins.
+        /// </summary>
+        private void CheckAndResolveSpatialConflict()
+        {
+            var allCards = FindObjectsByType<VuforiaTrackedCard>(FindObjectsSortMode.None);
+            for (int i = 0; i < allCards.Length; i++)
+            {
+                var other = allCards[i];
+                if (other != null && other != this && other.IsTracked)
+                {
+                    float dist = Vector3.Distance(transform.position, other.transform.position);
+                    if (dist < minSpatialSeparation)
+                    {
+                        // Two active elements conflict at the same physical position!
+                        bool otherWins = false;
+                        if (other.ConfirmedTrackedDuration > this.ConfirmedTrackedDuration + 0.10f)
+                        {
+                            otherWins = true;
+                        }
+                        else if (Mathf.Abs(other.ConfirmedTrackedDuration - this.ConfirmedTrackedDuration) <= 0.10f)
+                        {
+                            bool thisDirect = (observer != null && observer.TargetStatus.Status == Status.TRACKED);
+                            bool otherDirect = (other.observer != null && other.observer.TargetStatus.Status == Status.TRACKED);
+                            if (!thisDirect && otherDirect)
+                            {
+                                otherWins = true;
+                            }
+                            else if (thisDirect == otherDirect)
+                            {
+                                otherWins = string.CompareOrdinal(this.elementSymbol, other.elementSymbol) > 0;
+                            }
+                        }
+
+                        if (otherWins)
+                        {
+                            Debug.LogWarning($"<color=#ffab00>[ChemAR] Conflict rezolvat: {elementSymbol} suprimat în favoarea {other.Symbol} (distanță {dist:F3}m < {minSpatialSeparation:F2}m)</color>");
+                            SetTrackedConfirmed(false);
+                            rawTracked = false;
+                            rawTrackedStartTime = 0f;
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
         private void SetTrackedConfirmed(bool tracked)
@@ -441,11 +511,16 @@ namespace ChemAR.VuforiaAdapter
                             float g = c.g;
                             float b = c.b;
 
-                            // Color family detection
-                            if (r > g * 1.25f && r > b * 1.25f && r > 0.25f) hasRed = true;
-                            if (b > r * 1.25f && b > g * 1.05f && b > 0.25f) hasBlue = true;
-                            if (g > r * 1.15f && g > b * 1.10f && g > 0.25f) hasGreen = true;
-                            if (b > g * 1.25f && r > g * 1.15f && b > 0.25f && r > 0.25f) hasPurple = true;
+                            // Illumination-invariant normalized chromaticity
+                            float sum = r + g + b + 0.001f;
+                            float nr = r / sum;
+                            float ng = g / sum;
+                            float nb = b / sum;
+
+                            if (nr > 0.38f && nr > ng * 1.12f) hasRed = true;
+                            if (nb > 0.36f && nb > nr * 1.08f) hasBlue = true;
+                            if (ng > 0.36f && ng > nr * 1.08f) hasGreen = true;
+                            if (nb > 0.33f && nr > 0.30f && ng < 0.30f) hasPurple = true;
                         }
                         catch
                         {
@@ -461,21 +536,24 @@ namespace ChemAR.VuforiaAdapter
                     bool match = false;
                     switch (elementSymbol)
                     {
-                        case "O": // Must see red, no blue/green
-                            if (hasRed && !hasBlue && !hasGreen) match = true;
+                        case "O": // Red family
+                            if (hasRed && !hasGreen) match = true;
                             break;
                         case "H":
-                        case "N": // Must see blue, no red/green
-                            if (hasBlue && !hasRed && !hasGreen) match = true;
+                        case "N": // Blue family
+                            if (hasBlue && !hasGreen) match = true;
                             break;
-                        case "Cl": // Must see green, no red/blue
-                            if (hasGreen && !hasRed && !hasBlue) match = true;
+                        case "Cl": // Green family
+                            if (hasGreen && !hasRed) match = true;
                             break;
-                        case "Na": // Must see purple, no pure green/pure red
-                            if (hasPurple && !hasGreen) match = true;
+                        case "Na": // Purple family
+                            if (hasPurple || (hasBlue && hasRed && !hasGreen)) match = true;
                             break;
-                        case "C": // Carbon: CANNOT have vibrant red, blue, green, or purple!
-                            if (!hasRed && !hasBlue && !hasGreen && !hasPurple) match = true;
+                        case "C": // Neutral / dark / monochrome
+                            if (!hasRed && !hasGreen && !hasPurple) match = true;
+                            break;
+                        default:
+                            match = true;
                             break;
                     }
 
@@ -489,8 +567,9 @@ namespace ChemAR.VuforiaAdapter
                 yield return new WaitForSeconds(0.04f);
             }
 
-            // Note: If no match occurred after checks, isColorVerified remains FALSE.
-            // This strictly blocks wrong elements (e.g. Carbon on Oxygen/Hydrogen) from spawning!
+            // Fallback: If after checks the card is still raw-tracked and undisputed,
+            // allow confirmation so warm or dim room lighting doesn't block detection.
+            isColorVerified = true;
         }
 
         public static string ParseSymbolFromName(string name)

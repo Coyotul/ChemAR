@@ -73,8 +73,8 @@ namespace ChemAR.VuforiaAdapter
             string id = obs.TargetName;
             if (string.IsNullOrEmpty(id)) id = obs.gameObject.name;
 
-            // Strict: only genuine TRACKED status is accepted. EXTENDED_TRACKED is rejected!
-            bool isObserved = (targetStatus.Status == Status.TRACKED);
+            // Accept both direct TRACKED and SLAM EXTENDED_TRACKED to avoid stutter on quick camera moves
+            bool isObserved = (targetStatus.Status == Status.TRACKED || targetStatus.Status == Status.EXTENDED_TRACKED);
 
             if (isObserved)
             {
