@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using ChemAR.Chemistry;
 using ChemAR.Core;
 using ChemAR.Render;
@@ -21,8 +22,8 @@ namespace ChemAR.VuforiaAdapter
         [SerializeField] private bool autoCreateVisualizerIfMissing = true;
 
         [Header("Stability Guards")]
-        [Tooltip("Time in seconds the marker must be continuously detected before confirming (default 0.25s)")]
-        [SerializeField] private float trackingConfirmationTime = 0.25f;
+        [Tooltip("Time in seconds the marker must be continuously detected before confirming (default 0.20s)")]
+        [SerializeField] private float trackingConfirmationTime = 0.20f;
 
         [Tooltip("Time in seconds the marker must be continuously lost before declaring lost (default 0.35s)")]
         [SerializeField] private float trackingLostDebounceTime = 0.35f;
@@ -46,7 +47,7 @@ namespace ChemAR.VuforiaAdapter
         private float rawLostStartTime;
 
         // Optical verification state
-        private bool isColorVerified = true;
+        private bool isColorVerified = false;
         private Coroutine opticalSamplingCoroutine;
         private Texture2D sampleTexture;
 
@@ -84,14 +85,7 @@ namespace ChemAR.VuforiaAdapter
                 elementSymbol = ParseSymbolFromName(gameObject.name);
             }
 
-            if (childAtomVisualizer == null)
-            {
-                childAtomVisualizer = GetComponentInChildren<AtomVisualizer>(true);
-            }
-            if (childAtomVisualizer != null)
-            {
-                childAtomVisualizer.gameObject.SetActive(false);
-            }
+            SetupVisualizer();
         }
 
         private void Start()
@@ -127,6 +121,16 @@ namespace ChemAR.VuforiaAdapter
 
         private void SetupVisualizer()
         {
+            // CRITICAL FIX: AtomVisualizer MUST be an explicit child of THIS ImageTarget GameObject.
+            // If it is detached or parented elsewhere, it renders at world (0,0,0), causing
+            // all 6 element spheres to spawn on top of each other!
+            if (childAtomVisualizer != null && childAtomVisualizer.transform.parent != transform)
+            {
+                childAtomVisualizer.transform.SetParent(transform, false);
+                childAtomVisualizer.transform.localPosition = Vector3.zero;
+                childAtomVisualizer.transform.localRotation = Quaternion.identity;
+            }
+
             if (childAtomVisualizer == null)
             {
                 childAtomVisualizer = GetComponentInChildren<AtomVisualizer>(true);
@@ -151,9 +155,11 @@ namespace ChemAR.VuforiaAdapter
             }
 
             // Strictly hide visualizer initially until confirmed tracked
-            if (childAtomVisualizer != null && !isTracked)
+            if (childAtomVisualizer != null)
             {
-                childAtomVisualizer.gameObject.SetActive(false);
+                childAtomVisualizer.transform.localPosition = Vector3.zero;
+                childAtomVisualizer.transform.localRotation = Quaternion.identity;
+                childAtomVisualizer.gameObject.SetActive(isTracked);
             }
         }
 
@@ -167,17 +173,18 @@ namespace ChemAR.VuforiaAdapter
                 if (rawTracked)
                 {
                     rawTrackedStartTime = Time.time;
-                    isColorVerified = !enableOpticalColorVerification; // Default to true if disabled
+                    isColorVerified = !enableOpticalColorVerification; // Default to true only if optical guard disabled
 
                     if (enableOpticalColorVerification && gameObject.activeInHierarchy)
                     {
                         if (opticalSamplingCoroutine != null) StopCoroutine(opticalSamplingCoroutine);
-                        opticalSamplingCoroutine = StartCoroutine(OpticalSamplingRoutine());
+                        opticalSamplingCoroutine = StartCoroutine(StrictOpticalSamplingRoutine());
                     }
                 }
                 else
                 {
                     rawLostStartTime = Time.time;
+                    isColorVerified = false;
                     if (opticalSamplingCoroutine != null)
                     {
                         StopCoroutine(opticalSamplingCoroutine);
@@ -189,12 +196,12 @@ namespace ChemAR.VuforiaAdapter
 
         private void Update()
         {
-            // GUARD 1: Temporal confirmation debounce + Spatial mutex + Optical verification
+            // GUARD: Temporal confirmation debounce + Spatial mutex + Strict Optical Verification
             if (!isTracked && rawTracked)
             {
                 if (Time.time - rawTrackedStartTime >= trackingConfirmationTime)
                 {
-                    // Optical Guard: must match expected element color signature
+                    // Optical Verification Guard: Must confirm the color on the camera feed matches this element
                     if (isColorVerified)
                     {
                         // Spatial Mutex Guard: Check if position is occupied by another card
@@ -241,7 +248,7 @@ namespace ChemAR.VuforiaAdapter
                         }
 
                         // Case B: Both cards are unconfirmed candidates for the same physical card.
-                        // The card with longer uninterrupted raw tracking takes priority.
+                        // The candidate with longer uninterrupted raw tracking takes priority.
                         if (other.rawTracked && other.RawTrackedDuration > this.RawTrackedDuration + 0.05f)
                         {
                             return true;
@@ -261,7 +268,7 @@ namespace ChemAR.VuforiaAdapter
             {
                 confirmedTrackedStartTime = Time.time;
                 lastTrackedTime = Time.time;
-                Debug.Log($"<color=#00e676><b>[ChemAR] Marker CONFIRMAT: {elementSymbol}</b></color>");
+                Debug.Log($"<color=#00e676><b>[ChemAR] Marker CONFIRMAT OPTIC & SPAȚIAL: {elementSymbol}</b></color>");
             }
             else
             {
@@ -284,6 +291,7 @@ namespace ChemAR.VuforiaAdapter
             rawTracked = false;
             rawTrackedStartTime = 0f;
             rawLostStartTime = 0f;
+            isColorVerified = false;
             if (opticalSamplingCoroutine != null)
             {
                 StopCoroutine(opticalSamplingCoroutine);
@@ -313,6 +321,9 @@ namespace ChemAR.VuforiaAdapter
             }
             else
             {
+                // Ensure visualizer is strictly anchored to card center
+                childAtomVisualizer.transform.localPosition = Vector3.zero;
+                childAtomVisualizer.transform.localRotation = Quaternion.identity;
                 childAtomVisualizer.gameObject.SetActive(true);
                 childAtomVisualizer.transform.localScale = Vector3.one * ChemARUIManager.CurrentScale;
                 childAtomVisualizer.SetReactingState(isReacting);
@@ -320,13 +331,27 @@ namespace ChemAR.VuforiaAdapter
         }
 
         /// <summary>
-        /// Coroutine that samples screen color at the card's header to confirm element color identity.
-        /// Prevents green Cl from spawning on blue N, or gray C from spawning on blue H.
+        /// Strict optical verification routine. Samples multiple points on the card surface
+        /// in local X-Z space (the target plane) and confirms the color family matches the element.
+        /// Rejects blatant false positives (e.g. Carbon on Red/Blue card, Chlorine on Blue card).
         /// </summary>
-        private IEnumerator OpticalSamplingRoutine()
+        private IEnumerator StrictOpticalSamplingRoutine()
         {
             int checks = 0;
-            while (rawTracked && !isTracked && checks < 6)
+            // Sample points on the card surface (X-Z plane, Y = 0)
+            Vector3[] samplePointsLocal = new Vector3[]
+            {
+                new Vector3(0, 0, cardWidth * 0.32f),              // Top banner center
+                new Vector3(-cardWidth * 0.22f, 0, cardWidth * 0.32f), // Top banner left
+                new Vector3(cardWidth * 0.22f, 0, cardWidth * 0.32f),  // Top banner right
+                new Vector3(-cardWidth * 0.36f, 0, 0),             // Left outer frame
+                new Vector3(cardWidth * 0.36f, 0, 0),              // Right outer frame
+                new Vector3(0, 0, -cardWidth * 0.32f),             // Bottom center (inverted view)
+                new Vector3(-cardWidth * 0.22f, 0, -cardWidth * 0.32f),// Bottom left
+                new Vector3(cardWidth * 0.22f, 0, -cardWidth * 0.32f)  // Bottom right
+            };
+
+            while (rawTracked && !isTracked && checks < 8)
             {
                 yield return new WaitForEndOfFrame();
                 checks++;
@@ -340,90 +365,85 @@ namespace ChemAR.VuforiaAdapter
                     yield break;
                 }
 
-                // The colored header banner is located at local Y = +cardWidth * 0.35f
-                Vector3 headerWorldPos = transform.TransformPoint(new Vector3(0, cardWidth * 0.35f, 0));
-                Vector3 screenPos = cam.WorldToScreenPoint(headerWorldPos);
-
-                if (screenPos.z > 0.05f && screenPos.x >= 5 && screenPos.x < Screen.width - 5 && screenPos.y >= 5 && screenPos.y < Screen.height - 5)
+                if (sampleTexture == null)
                 {
-                    Color sampled = Color.white;
-                    bool readOk = false;
-                    try
-                    {
-                        if (sampleTexture == null) sampleTexture = new Texture2D(1, 1, TextureFormat.RGB24, false);
-                        sampleTexture.ReadPixels(new Rect(screenPos.x, screenPos.y, 1, 1), 0, 0);
-                        sampleTexture.Apply();
-                        sampled = sampleTexture.GetPixel(0, 0);
-                        readOk = true;
-                    }
-                    catch
-                    {
-                        // In case platform forbids ReadPixels, graceful fallback
-                        isColorVerified = true;
-                        yield break;
-                    }
+                    sampleTexture = new Texture2D(1, 1, TextureFormat.RGB24, false);
+                }
 
-                    if (readOk)
+                bool hasRed = false;
+                bool hasBlue = false;
+                bool hasGreen = false;
+                bool hasPurple = false;
+                int validSamples = 0;
+
+                for (int i = 0; i < samplePointsLocal.Length; i++)
+                {
+                    Vector3 worldPos = transform.TransformPoint(samplePointsLocal[i]);
+                    Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
+
+                    if (screenPos.z > 0.05f && screenPos.x >= 2 && screenPos.x < Screen.width - 2 && screenPos.y >= 2 && screenPos.y < Screen.height - 2)
                     {
-                        if (ValidateOpticalSignature(sampled))
+                        try
                         {
+                            sampleTexture.ReadPixels(new Rect((int)screenPos.x, (int)screenPos.y, 1, 1), 0, 0);
+                            sampleTexture.Apply();
+                            Color c = sampleTexture.GetPixel(0, 0);
+                            validSamples++;
+
+                            float r = c.r;
+                            float g = c.g;
+                            float b = c.b;
+
+                            // Color family detection
+                            if (r > g * 1.25f && r > b * 1.25f && r > 0.25f) hasRed = true;
+                            if (b > r * 1.25f && b > g * 1.05f && b > 0.25f) hasBlue = true;
+                            if (g > r * 1.15f && g > b * 1.10f && g > 0.25f) hasGreen = true;
+                            if (b > g * 1.25f && r > g * 1.15f && b > 0.25f && r > 0.25f) hasPurple = true;
+                        }
+                        catch
+                        {
+                            // In case ReadPixels is blocked by platform
                             isColorVerified = true;
-                            yield break; // Confirmed!
+                            yield break;
                         }
                     }
                 }
 
-                yield return new WaitForSeconds(0.05f);
+                if (validSamples > 0)
+                {
+                    bool match = false;
+                    switch (elementSymbol)
+                    {
+                        case "O": // Must see red, no blue/green
+                            if (hasRed && !hasBlue && !hasGreen) match = true;
+                            break;
+                        case "H":
+                        case "N": // Must see blue, no red/green
+                            if (hasBlue && !hasRed && !hasGreen) match = true;
+                            break;
+                        case "Cl": // Must see green, no red/blue
+                            if (hasGreen && !hasRed && !hasBlue) match = true;
+                            break;
+                        case "Na": // Must see purple, no pure green/pure red
+                            if (hasPurple && !hasGreen) match = true;
+                            break;
+                        case "C": // Carbon: CANNOT have vibrant red, blue, green, or purple!
+                            if (!hasRed && !hasBlue && !hasGreen && !hasPurple) match = true;
+                            break;
+                    }
+
+                    if (match)
+                    {
+                        isColorVerified = true;
+                        yield break; // Optical confirmation passed!
+                    }
+                }
+
+                yield return new WaitForSeconds(0.04f);
             }
 
-            // If routine completes without definitive failure, allow confirmation
-            if (!isColorVerified && checks >= 4)
-            {
-                // Fallback to true so we don't permanently block legitimate tracking under extreme lighting
-                isColorVerified = true;
-            }
-        }
-
-        /// <summary>
-        /// Validates that the visual appearance at the card position matches the expected element.
-        /// Rejects blatant mismatches (e.g. green detected on a blue card, or red on a green card).
-        /// </summary>
-        private bool ValidateOpticalSignature(Color c)
-        {
-            float r = c.r;
-            float g = c.g;
-            float b = c.b;
-            float max = Mathf.Max(r, Mathf.Max(g, b));
-            float min = Mathf.Min(r, Mathf.Min(g, b));
-            float delta = max - min;
-            float sat = max > 0.001f ? delta / max : 0f;
-
-            switch (elementSymbol)
-            {
-                case "O": // Red header
-                    // Red must be higher than blue and green
-                    if (b > r * 1.3f || g > r * 1.3f) return false;
-                    break;
-                case "Cl": // Green header
-                    // Green must be higher than red and blue
-                    if (r > g * 1.3f || b > g * 1.3f) return false;
-                    break;
-                case "Na": // Purple header
-                    // Purple has high blue and red, but low green
-                    if (g > b * 1.3f && g > r * 1.3f) return false;
-                    break;
-                case "H":
-                case "N": // Blue header
-                    // Blue must not be completely overpowered by red or green
-                    if (r > b * 1.35f) return false; // Definitely not red
-                    if (g > b * 1.35f) return false; // Definitely not green
-                    break;
-                case "C": // Dark gray/black header
-                    // Cannot be high saturation red/green/blue
-                    if (sat > 0.65f && (r > 0.6f || g > 0.6f || b > 0.6f)) return false;
-                    break;
-            }
-            return true;
+            // Note: If no match occurred after checks, isColorVerified remains FALSE.
+            // This strictly blocks wrong elements (e.g. Carbon on Oxygen/Hydrogen) from spawning!
         }
 
         public static string ParseSymbolFromName(string name)
