@@ -21,14 +21,17 @@ namespace ChemAR.VuforiaAdapter
         public static VuforiaReactionController Instance { get; private set; }
 
         [Header("Reaction Distance Thresholds")]
-        [Tooltip("Distance in meters to trigger molecule synthesis (default 14cm)")]
-        [SerializeField] private float reactionDistance = 0.14f;
+        [Tooltip("Minimum distance in meters between cards to reject co-located ghost detections (default 6cm)")]
+        [SerializeField] private float minReactionDistance = 0.06f;
 
-        [Tooltip("Distance in meters to trigger automatic dissociation (default 20cm)")]
-        [SerializeField] private float dissociationDistance = 0.20f;
+        [Tooltip("Distance in meters to trigger molecule synthesis (default 18cm)")]
+        [SerializeField] private float reactionDistance = 0.18f;
+
+        [Tooltip("Distance in meters to trigger automatic dissociation (default 25cm)")]
+        [SerializeField] private float dissociationDistance = 0.25f;
 
         [Tooltip("Time in seconds cards must stay close before reacting")]
-        [SerializeField] private float reactionTriggerDelay = 0.30f;
+        [SerializeField] private float reactionTriggerDelay = 0.25f;
 
         [Tooltip("Grace period in seconds when a card is briefly lost before dissociating")]
         [SerializeField] private float trackingLostGracePeriod = 1.2f;
@@ -76,11 +79,78 @@ namespace ChemAR.VuforiaAdapter
 
         private void Update()
         {
+            // 0. Suppress duplicate/ghost cards falsely detected at the exact same location (< minReactionDistance)
+            SuppressCoLocatedGhostCards();
+
             // 1. Check for potential reactions between pairs of tracked cards
             CheckForNewReactions();
 
             // 2. Update existing active reactions (follow midpoint & auto-dissociate when separated)
             UpdateActiveReactions();
+        }
+
+        private void SuppressCoLocatedGhostCards()
+        {
+            var activeCards = new List<VuforiaTrackedCard>();
+            for (int i = 0; i < trackedCards.Count; i++)
+            {
+                var card = trackedCards[i];
+                if (card != null && card.IsRawTracked)
+                {
+                    activeCards.Add(card);
+                }
+            }
+
+            if (activeCards.Count <= 1)
+            {
+                if (activeCards.Count == 1)
+                {
+                    activeCards[0].SetGhostSuppressed(false);
+                }
+                return;
+            }
+
+            for (int i = 0; i < activeCards.Count; i++)
+            {
+                activeCards[i].SetGhostSuppressed(false);
+            }
+
+            for (int i = 0; i < activeCards.Count; i++)
+            {
+                var cardA = activeCards[i];
+                if (cardA.IsGhostSuppressed) continue;
+
+                for (int j = i + 1; j < activeCards.Count; j++)
+                {
+                    var cardB = activeCards[j];
+                    if (cardB.IsGhostSuppressed) continue;
+
+                    float dist = Vector3.Distance(cardA.transform.position, cardB.transform.position);
+                    if (dist < minReactionDistance)
+                    {
+                        // Co-located ghost conflict: two cards detected on the same physical sheet!
+                        // Prioritize optically verified cards over unverified ones
+                        if (cardA.IsOpticallyVerified && !cardB.IsOpticallyVerified)
+                        {
+                            cardB.SetGhostSuppressed(true);
+                        }
+                        else if (!cardA.IsOpticallyVerified && cardB.IsOpticallyVerified)
+                        {
+                            cardA.SetGhostSuppressed(true);
+                            break;
+                        }
+                        else if (cardA.LastTrackedTime <= cardB.LastTrackedTime)
+                        {
+                            cardB.SetGhostSuppressed(true);
+                        }
+                        else
+                        {
+                            cardA.SetGhostSuppressed(true);
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         private void CheckForNewReactions()
@@ -100,7 +170,8 @@ namespace ChemAR.VuforiaAdapter
 
                     float dist = Vector3.Distance(cardA.transform.position, cardB.transform.position);
 
-                    if (dist <= reactionDistance)
+                    // Must be two separate physical cards (dist >= minReactionDistance) and within reaction threshold
+                    if (dist >= minReactionDistance && dist <= reactionDistance)
                     {
                         var key = GetCardKey(cardA, cardB);
                         proximityTimer[key] = proximityTimer.GetValueOrDefault(key, 0f) + Time.deltaTime;
@@ -193,9 +264,9 @@ namespace ChemAR.VuforiaAdapter
                 // Check distance between cards
                 float dist = Vector3.Distance(act.cardA.transform.position, act.cardB.transform.position);
 
-                if (dist > dissociationDistance)
+                if (dist < minReactionDistance || dist > dissociationDistance)
                 {
-                    Debug.Log($"[VuforiaReactionController] Cartonașe depărtate ({dist:F2}m > {dissociationDistance:F2}m). Disociere automată pentru {act.reaction.reactionEquation}.");
+                    Debug.Log($"[VuforiaReactionController] Cartonașe depărtate sau suprapuse ({dist:F2}m). Disociere automată pentru {act.reaction.reactionEquation}.");
                     DissociateReaction(act);
                     continue;
                 }
@@ -245,9 +316,14 @@ namespace ChemAR.VuforiaAdapter
             activeReactions.Clear();
             proximityTimer.Clear();
 
-            for (int i = 0; i < trackedCards.Count; i++)
+            var allCards = FindObjectsByType<VuforiaTrackedCard>(FindObjectsSortMode.None);
+            for (int i = 0; i < allCards.Length; i++)
             {
-                if (trackedCards[i] != null) trackedCards[i].SetReacting(false);
+                if (allCards[i] != null)
+                {
+                    allCards[i].SetReacting(false);
+                    allCards[i].ForceReset();
+                }
             }
 
             if (uiManager != null)

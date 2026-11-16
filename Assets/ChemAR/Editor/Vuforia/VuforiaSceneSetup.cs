@@ -90,7 +90,9 @@ namespace ChemAR.Vuforia.Editor
                 if (n.Contains("ar session") || n.Contains("xr origin") || n.Contains("ar session origin") ||
                     n.Contains("ar camera manager") || n.StartsWith("simulatedcard") ||
                     n == "backingplate" || n == "accentbar" || n == "cardreticle" ||
-                    n.StartsWith("atomvisualizer_") || n.StartsWith("atom_") || n.StartsWith("molecule_"))
+                    n.StartsWith("atomvisualizer_") || n.StartsWith("atom_") || n.StartsWith("molecule_") ||
+                    n.StartsWith("orbitalring") || n == "visualroot" || n == "billboardbadge" || n == "nucleus" ||
+                    n.StartsWith("electron_"))
                 {
                     Debug.Log($"[ChemAR] Curățare obiect vechi/rezidual: {go.name}");
                     Undo.DestroyObjectImmediate(go);
@@ -256,6 +258,18 @@ namespace ChemAR.Vuforia.Editor
                 Undo.RegisterCreatedObjectUndo(targetGo, $"Create {targetName}");
             }
 
+            // Remove any leaked procedural children under the ImageTarget
+            for (int c = targetGo.transform.childCount - 1; c >= 0; c--)
+            {
+                var child = targetGo.transform.GetChild(c);
+                string cn = child.name.ToLowerInvariant();
+                if (cn.StartsWith("atom_") || cn == "cardreticle" || cn == "visualroot" ||
+                    cn == "billboardbadge" || cn.StartsWith("orbitalring") || cn == "nucleus" || cn.StartsWith("electron_"))
+                {
+                    Undo.DestroyObjectImmediate(child.gameObject);
+                }
+            }
+
             // Space them out slightly in the editor scene view for preview
             targetGo.transform.position = new Vector3((index - 2.5f) * 0.35f, 0, 1.2f);
             targetGo.transform.rotation = Quaternion.Euler(90f, 0, 0);
@@ -307,10 +321,11 @@ namespace ChemAR.Vuforia.Editor
 
             so.ApplyModifiedProperties();
 
-            // Default Observer Event Handler (Tracked only to prevent false positives from adjacent markers)
+            // Default Observer Event Handler (Tracked and Extended Tracked with Pose Smoothing)
             var eventHandler = targetGo.GetComponent<DefaultObserverEventHandler>();
             if (eventHandler == null) eventHandler = targetGo.AddComponent<DefaultObserverEventHandler>();
-            eventHandler.StatusFilter = DefaultObserverEventHandler.TrackingStatusFilter.Tracked;
+            eventHandler.StatusFilter = DefaultObserverEventHandler.TrackingStatusFilter.Tracked_ExtendedTracked;
+            eventHandler.UsePoseSmoothing = true;
 
             // VuforiaTrackedCard
             var card = targetGo.GetComponent<VuforiaTrackedCard>();

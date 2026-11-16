@@ -57,11 +57,20 @@ namespace ChemAR
             }
 
             // 2. Ensure Core Systems
-            GetOrCreate<SpatialEngine>("SpatialEngine");
-            GetOrCreate<ReactionResolver>("ReactionResolver");
+            // In Vuforia mode, VuforiaReactionController and VuforiaTrackedCard handle perception and reactions.
+            // Do not spin up AR Foundation / legacy perception & render managers to prevent duplicate reaction conflicts.
+            bool isVuforiaMode = (cam != null && cam.GetComponent("VuforiaBehaviour") != null) ||
+                                 GameObject.Find("ChemAR_Core")?.GetComponent("VuforiaReactionController") != null;
+
+            if (!isVuforiaMode)
+            {
+                GetOrCreate<SpatialEngine>("SpatialEngine");
+                GetOrCreate<ReactionResolver>("ReactionResolver");
+                GetOrCreate<ChemARRenderManager>("ChemARRenderManager");
+                GetOrCreate<ARPerceptionManager>("ARPerceptionManager");
+            }
+
             GetOrCreate<ThermalVFXManager>("ThermalVFXManager");
-            GetOrCreate<ChemARRenderManager>("ChemARRenderManager");
-            GetOrCreate<ARPerceptionManager>("ARPerceptionManager");
             GetOrCreate<ChemARUIManager>("ChemARUIManager");
             GetOrCreate<ExperimentalValidationHarness>("ExperimentalValidationHarness");
 

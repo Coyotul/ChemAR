@@ -32,10 +32,33 @@ namespace ChemAR.Render
         public string Symbol => element?.symbol;
         public ElementData Element => element;
 
+        private void Awake()
+        {
+            // Clean up any serialized or residual child objects on Awake to ensure a clean slate
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var child = transform.GetChild(i);
+                if (Application.isPlaying)
+                    Destroy(child.gameObject);
+                else
+                    DestroyImmediate(child.gameObject);
+            }
+        }
+
         public void Initialize(ElementData elementData)
         {
             this.element = elementData;
             this.spawnTime = Time.time;
+
+            // Clean up any existing children before initializing to prevent duplicate stacking/glitching
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var child = transform.GetChild(i);
+                if (Application.isPlaying)
+                    Destroy(child.gameObject);
+                else
+                    DestroyImmediate(child.gameObject);
+            }
 
             // Apply global AR scale chosen by user
             transform.localScale = Vector3.one * ChemARUIManager.CurrentScale;
@@ -45,6 +68,7 @@ namespace ChemAR.Render
 
             // 2. Visual Root container for floating 3D objects
             var rootGo = new GameObject("VisualRoot");
+            rootGo.hideFlags = HideFlags.DontSave;
             visualRoot = rootGo.transform;
             visualRoot.SetParent(transform, false);
             visualRoot.localPosition = new Vector3(0, hoverHeight, 0);
@@ -52,6 +76,7 @@ namespace ChemAR.Render
             // 3. Central CPK Nucleus Sphere (~50% smaller)
             float r = Mathf.Max(0.018f, elementData.visualRadius * 0.5f);
             atomSphere = ProceduralMeshHelper.CreateSphere("Nucleus", visualRoot, Vector3.zero, r, elementData.cpkColor);
+            if (atomSphere != null) atomSphere.hideFlags = HideFlags.DontSave;
 
             // 4. Dual Inclined Electron Orbits (~50% smaller)
             float ringRadius = r * 1.5f;
@@ -60,7 +85,9 @@ namespace ChemAR.Render
 
             // Electron beads on orbits (~50% smaller)
             electronBead1 = ProceduralMeshHelper.CreateSphere("Electron_1", orbitalRing1.transform, new Vector3(ringRadius, 0, 0), 0.0035f, Color.white);
+            if (electronBead1 != null) electronBead1.hideFlags = HideFlags.DontSave;
             electronBead2 = ProceduralMeshHelper.CreateSphere("Electron_2", orbitalRing2.transform, new Vector3(-ringRadius, 0, 0), 0.0035f, Color.white);
+            if (electronBead2 != null) electronBead2.hideFlags = HideFlags.DontSave;
 
             // 5. Holographic Billboard Info Badge (Facing Camera, ~50% smaller)
             CreateBillboardBadge(elementData, r);
@@ -76,6 +103,7 @@ namespace ChemAR.Render
         private void CreateCardSurfaceReticle(ElementData el)
         {
             cardReticle = new GameObject("CardReticle");
+            cardReticle.hideFlags = HideFlags.DontSave;
             cardReticle.transform.SetParent(transform, false);
             cardReticle.transform.localPosition = new Vector3(0, 0.002f, 0);
 
@@ -100,6 +128,7 @@ namespace ChemAR.Render
         private GameObject CreateOrbitRing(string name, Transform parent, float radius, Quaternion orientation, Color baseColor)
         {
             var ringGo = new GameObject(name);
+            ringGo.hideFlags = HideFlags.DontSave;
             ringGo.transform.SetParent(parent, false);
             ringGo.transform.localRotation = orientation;
 
@@ -125,6 +154,7 @@ namespace ChemAR.Render
         private void CreateBillboardBadge(ElementData el, float nucleusRadius)
         {
             billboardBadge = new GameObject("BillboardBadge");
+            billboardBadge.hideFlags = HideFlags.DontSave;
             billboardBadge.transform.SetParent(visualRoot, false);
             billboardBadge.transform.localPosition = new Vector3(0, nucleusRadius + 0.038f, 0);
 

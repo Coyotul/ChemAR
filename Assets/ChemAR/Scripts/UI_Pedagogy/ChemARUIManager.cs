@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using ChemAR.Chemistry;
 using ChemAR.Core;
@@ -57,10 +58,6 @@ namespace ChemAR.UI
             OnRequestRevertAll?.Invoke();
             if (reactionResolver != null) reactionResolver.DissociateAllReactions();
 
-            // Also explicitly notify VuforiaReactionController
-            var vuforiaController = FindFirstObjectByType<ChemAR.VuforiaAdapter.VuforiaReactionController>();
-            if (vuforiaController != null) vuforiaController.DissociateAllReactions();
-
             // Destroy any leftover spawned 3D molecule visualizers in scene
             var allMols = FindObjectsByType<ChemAR.Render.MoleculeVisualizer>(FindObjectsSortMode.None);
             foreach (var m in allMols)
@@ -70,13 +67,6 @@ namespace ChemAR.UI
 
             // Reset scale back to 100%
             SetScale(1.0f);
-
-            // Force refresh all tracked cards to clear any stuck state
-            var allCards = FindObjectsByType<ChemAR.VuforiaAdapter.VuforiaTrackedCard>(FindObjectsSortMode.None);
-            foreach (var c in allCards)
-            {
-                if (c != null) c.ForceReset();
-            }
 
             // Visual feedback on button
             if (resetBtnText != null)

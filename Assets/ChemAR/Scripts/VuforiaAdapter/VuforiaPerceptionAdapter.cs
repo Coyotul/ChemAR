@@ -22,6 +22,14 @@ namespace ChemAR.VuforiaAdapter
 
         private void Start()
         {
+            // If VuforiaReactionController is present, it directly manages Vuforia reactions.
+            // Deactivate this bridge adapter to avoid duplicate parallel reactions and duplicate molecules.
+            if (FindFirstObjectByType<VuforiaReactionController>() != null)
+            {
+                enabled = false;
+                return;
+            }
+
             RegisterExistingObservers();
             AttachToPerceptionManager();
         }
