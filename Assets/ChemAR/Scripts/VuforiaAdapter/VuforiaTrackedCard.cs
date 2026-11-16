@@ -85,6 +85,16 @@ namespace ChemAR.VuforiaAdapter
                 elementSymbol = ParseSymbolFromName(gameObject.name);
             }
 
+            // Cleanup any orphaned roots named "VisualRoot" left at scene root level
+            var roots = gameObject.scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (roots[i] != null && roots[i].name == "VisualRoot")
+                {
+                    Destroy(roots[i]);
+                }
+            }
+
             SetupVisualizer();
         }
 
@@ -163,60 +173,97 @@ namespace ChemAR.VuforiaAdapter
             }
         }
 
+        /// <summary>
+        /// Validates that the card is physically visible within the active camera's frustum
+        /// and facing towards the camera (preventing extended tracking hallucinations and out-of-screen ghosts).
+        /// </summary>
+        public bool IsVisibleInCamera()
+        {
+            var cam = Camera.main;
+            if (cam == null) return false;
+
+            Vector3 cardPos = transform.position;
+            Vector3 vp = cam.WorldToViewportPoint(cardPos);
+
+            // 1. Must be in front of camera (distance between 0.08m and 2.5m)
+            if (vp.z < 0.08f || vp.z > 2.5f) return false;
+
+            // 2. Must be within visible screen area (with 4% border margin)
+            if (vp.x < 0.04f || vp.x > 0.96f || vp.y < 0.04f || vp.y > 0.96f) return false;
+
+            // 3. Card face normal (transform.up in Vuforia Image Targets) must point towards camera
+            Vector3 toCam = (cam.transform.position - cardPos).normalized;
+            if (Vector3.Dot(transform.up, toCam) < 0.08f) return false;
+
+            return true;
+        }
+
         private void HandleTargetStatusChanged(ObserverBehaviour obs, TargetStatus status)
         {
-            // Only accept genuine TRACKED status, rejecting LIMITED, EXTENDED_TRACKED and NO_POSE
-            bool valid = (status.Status == Status.TRACKED);
-            if (valid != rawTracked)
+            // Only accept genuine TRACKED status AND physical presence in camera frustum
+            bool valid = (status.Status == Status.TRACKED) && IsVisibleInCamera();
+            if (!valid)
             {
-                rawTracked = valid;
-                if (rawTracked)
+                if (isTracked) SetTrackedConfirmed(false);
+                rawTracked = false;
+                isColorVerified = false;
+                if (opticalSamplingCoroutine != null)
                 {
-                    rawTrackedStartTime = Time.time;
-                    isColorVerified = !enableOpticalColorVerification; // Default to true only if optical guard disabled
-
-                    if (enableOpticalColorVerification && gameObject.activeInHierarchy)
-                    {
-                        if (opticalSamplingCoroutine != null) StopCoroutine(opticalSamplingCoroutine);
-                        opticalSamplingCoroutine = StartCoroutine(StrictOpticalSamplingRoutine());
-                    }
-                }
-                else
-                {
-                    rawLostStartTime = Time.time;
-                    isColorVerified = false;
-                    if (opticalSamplingCoroutine != null)
-                    {
-                        StopCoroutine(opticalSamplingCoroutine);
-                        opticalSamplingCoroutine = null;
-                    }
+                    StopCoroutine(opticalSamplingCoroutine);
+                    opticalSamplingCoroutine = null;
                 }
             }
         }
 
         private void Update()
         {
-            // GUARD: Temporal confirmation debounce + Spatial mutex + Strict Optical Verification
+            // 1. Continuous physical camera visibility check + Observer status check
+            bool inCam = IsVisibleInCamera();
+            bool obsTracked = (observer != null && observer.TargetStatus.Status == Status.TRACKED);
+            bool actuallyValid = inCam && obsTracked;
+
+            if (!actuallyValid)
+            {
+                // Immediately drop tracking if card leaves the screen or observer drops
+                if (isTracked)
+                {
+                    SetTrackedConfirmed(false);
+                }
+                rawTracked = false;
+                isColorVerified = false;
+                if (opticalSamplingCoroutine != null)
+                {
+                    StopCoroutine(opticalSamplingCoroutine);
+                    opticalSamplingCoroutine = null;
+                }
+                return;
+            }
+
+            // 2. Card is physically visible and Vuforia observer is TRACKED
+            if (!rawTracked)
+            {
+                rawTracked = true;
+                rawTrackedStartTime = Time.time;
+                isColorVerified = !enableOpticalColorVerification;
+                if (enableOpticalColorVerification && gameObject.activeInHierarchy)
+                {
+                    if (opticalSamplingCoroutine != null) StopCoroutine(opticalSamplingCoroutine);
+                    opticalSamplingCoroutine = StartCoroutine(StrictOpticalSamplingRoutine());
+                }
+            }
+
+            // 3. Confirmation debounce + Optical check + Spatial mutex
             if (!isTracked && rawTracked)
             {
                 if (Time.time - rawTrackedStartTime >= trackingConfirmationTime)
                 {
-                    // Optical Verification Guard: Must confirm the color on the camera feed matches this element
                     if (isColorVerified)
                     {
-                        // Spatial Mutex Guard: Check if position is occupied by another card
                         if (!IsPositionOccupiedOrDisputed())
                         {
                             SetTrackedConfirmed(true);
                         }
                     }
-                }
-            }
-            else if (isTracked && !rawTracked)
-            {
-                if (Time.time - rawLostStartTime >= trackingLostDebounceTime)
-                {
-                    SetTrackedConfirmed(false);
                 }
             }
             else if (isTracked && rawTracked)

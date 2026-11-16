@@ -53,12 +53,18 @@ namespace ChemAR.VuforiaAdapter
             }
         }
 
+        public void ClearAllMemory()
+        {
+            activeMarkers.Clear();
+        }
+
         private void HandleTargetStatusChanged(ObserverBehaviour obs, TargetStatus targetStatus)
         {
             string id = obs.TargetName;
             if (string.IsNullOrEmpty(id)) id = obs.gameObject.name;
 
-            bool isObserved = (targetStatus.Status == Status.TRACKED || targetStatus.Status == Status.EXTENDED_TRACKED);
+            // Strict: only genuine TRACKED status is accepted. EXTENDED_TRACKED is rejected!
+            bool isObserved = (targetStatus.Status == Status.TRACKED);
 
             if (isObserved)
             {
@@ -76,7 +82,7 @@ namespace ChemAR.VuforiaAdapter
                 if (isNew) OnMarkerAdded?.Invoke(pose);
                 else OnMarkerUpdated?.Invoke(pose);
             }
-            else if (targetStatus.Status == Status.NO_POSE)
+            else
             {
                 if (activeMarkers.Remove(id, out var pose))
                 {

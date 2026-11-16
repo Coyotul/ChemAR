@@ -156,6 +156,10 @@ namespace ChemAR.Spatial
             previousDistances.Clear();
             currentPairs.Clear();
             activeProximityPairs.Clear();
+            if (occlusionHandler != null)
+            {
+                occlusionHandler.ClearAll();
+            }
         }
 
         private void ComputeSpatialRelations(float dt)

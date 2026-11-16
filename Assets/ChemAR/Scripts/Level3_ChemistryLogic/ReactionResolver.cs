@@ -25,6 +25,9 @@ namespace ChemAR.Chemistry
 
         private readonly Dictionary<string, float> proximityDuration = new();
         private readonly List<ReactionInstance> activeReactions = new();
+        private float revertCooldownTimer = 0f;
+
+        public static bool IsExternalReactionControllerActive { get; set; } = false;
 
         public IReadOnlyList<ReactionInstance> ActiveReactions => activeReactions;
 
@@ -53,6 +56,20 @@ namespace ChemAR.Chemistry
 
         private void Update()
         {
+            // If an external reaction controller (e.g. VuforiaReactionController) is active,
+            // stand down to prevent duplicate reaction synthesis and conflicting visual states.
+            if (IsExternalReactionControllerActive)
+            {
+                return;
+            }
+
+            if (revertCooldownTimer > 0f)
+            {
+                revertCooldownTimer -= Time.deltaTime;
+                proximityDuration.Clear();
+                return;
+            }
+
             if (spatialEngine == null) return;
 
             // 1. Check currently active pairs within reaction threshold to trigger synthesis
@@ -181,10 +198,18 @@ namespace ChemAR.Chemistry
 
         public void DissociateAllReactions()
         {
+            proximityDuration.Clear();
             for (int i = activeReactions.Count - 1; i >= 0; i--)
             {
                 DissociateReaction(activeReactions[i]);
             }
+            activeReactions.Clear();
+        }
+
+        public void ClearAllMemory()
+        {
+            revertCooldownTimer = 1.5f;
+            DissociateAllReactions();
         }
 
         public bool IsMarkerInActiveReaction(string markerId)

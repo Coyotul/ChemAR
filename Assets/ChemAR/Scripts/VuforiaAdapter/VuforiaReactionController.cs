@@ -43,6 +43,7 @@ namespace ChemAR.VuforiaAdapter
         private readonly List<VuforiaTrackedCard> trackedCards = new();
         private readonly List<ActiveVuforiaReaction> activeReactions = new();
         private readonly Dictionary<(string, string), float> proximityTimer = new();
+        private float revertCooldownTimer = 0f;
 
         public IReadOnlyList<ActiveVuforiaReaction> ActiveReactions => activeReactions;
 
@@ -50,6 +51,8 @@ namespace ChemAR.VuforiaAdapter
         {
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
+
+            ReactionResolver.IsExternalReactionControllerActive = true;
 
             if (thermalVfx == null) thermalVfx = GetComponent<ThermalVFXManager>() ?? FindFirstObjectByType<ThermalVFXManager>();
             if (uiManager == null) uiManager = GetComponent<ChemARUIManager>() ?? FindFirstObjectByType<ChemARUIManager>();
@@ -69,6 +72,7 @@ namespace ChemAR.VuforiaAdapter
 
         private void OnDestroy()
         {
+            ReactionResolver.IsExternalReactionControllerActive = false;
             ChemARUIManager.OnRequestRevertAll -= DissociateAllReactions;
         }
 
@@ -88,20 +92,27 @@ namespace ChemAR.VuforiaAdapter
 
         private void CheckForNewReactions()
         {
+            if (revertCooldownTimer > 0f)
+            {
+                revertCooldownTimer -= Time.deltaTime;
+                proximityTimer.Clear();
+                return;
+            }
+
             // Strict limit: maximum 1 active reaction at a time to prevent visual clutter
             if (activeReactions.Count >= 1) return;
 
             for (int i = 0; i < trackedCards.Count; i++)
             {
                 var cardA = trackedCards[i];
-                if (cardA == null || !cardA.IsTracked || cardA.IsReacting) continue;
+                if (cardA == null || !cardA.IsTracked || cardA.IsReacting || !cardA.IsVisibleInCamera()) continue;
                 // Guard: cardA must be stably confirmed
                 if (cardA.ConfirmedTrackedDuration < 0.40f) continue;
 
                 for (int j = i + 1; j < trackedCards.Count; j++)
                 {
                     var cardB = trackedCards[j];
-                    if (cardB == null || !cardB.IsTracked || cardB.IsReacting) continue;
+                    if (cardB == null || !cardB.IsTracked || cardB.IsReacting || !cardB.IsVisibleInCamera()) continue;
                     // Guard: cardB must be stably confirmed
                     if (cardB.ConfirmedTrackedDuration < 0.40f) continue;
 
@@ -186,13 +197,13 @@ namespace ChemAR.VuforiaAdapter
                     continue;
                 }
 
-                // If either card lost tracking for more than grace period -> dissociate
-                bool aLost = !act.cardA.IsTracked && (Time.time - act.cardA.LastTrackedTime > trackingLostGracePeriod);
-                bool bLost = !act.cardB.IsTracked && (Time.time - act.cardB.LastTrackedTime > trackingLostGracePeriod);
+                // If either card lost tracking OR is no longer visible in camera -> dissociate immediately!
+                bool aLost = !act.cardA.IsTracked || !act.cardA.IsVisibleInCamera();
+                bool bLost = !act.cardB.IsTracked || !act.cardB.IsVisibleInCamera();
 
                 if (aLost || bLost)
                 {
-                    Debug.Log($"[VuforiaReactionController] Cartonaș pierdut din vedere. Disociere automată pentru {act.reaction.reactionEquation}.");
+                    Debug.Log($"[VuforiaReactionController] Cartonaș pierdut sau ieșit din cadru. Disociere automată pentru {act.reaction.reactionEquation}.");
                     DissociateReaction(act);
                     continue;
                 }
@@ -239,6 +250,8 @@ namespace ChemAR.VuforiaAdapter
 
         public void DissociateAllReactions()
         {
+            revertCooldownTimer = 1.5f;
+
             for (int i = activeReactions.Count - 1; i >= 0; i--)
             {
                 var act = activeReactions[i];
@@ -252,15 +265,31 @@ namespace ChemAR.VuforiaAdapter
             activeReactions.Clear();
             proximityTimer.Clear();
 
+            // Destroy any leftover spawned 3D molecule visualizers in scene
+            var allMols = FindObjectsByType<MoleculeVisualizer>(FindObjectsSortMode.None);
+            for (int i = 0; i < allMols.Length; i++)
+            {
+                if (allMols[i] != null) Destroy(allMols[i].gameObject);
+            }
+
             for (int i = 0; i < trackedCards.Count; i++)
             {
-                if (trackedCards[i] != null) trackedCards[i].SetReacting(false);
+                if (trackedCards[i] != null)
+                {
+                    trackedCards[i].SetReacting(false);
+                    trackedCards[i].ForceReset();
+                }
             }
 
             if (uiManager != null)
             {
                 uiManager.HideReactionInfo();
             }
+        }
+
+        public void ClearAllMemory()
+        {
+            DissociateAllReactions();
         }
 
         private (string, string) GetCardKey(VuforiaTrackedCard a, VuforiaTrackedCard b)

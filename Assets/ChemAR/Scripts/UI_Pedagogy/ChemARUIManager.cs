@@ -55,17 +55,53 @@ namespace ChemAR.UI
         public void TriggerRevertAll()
         {
             HideReactionInfo();
-            OnRequestRevertAll?.Invoke();
-            if (reactionResolver != null) reactionResolver.DissociateAllReactions();
+            activeTrackedMarkersCount = 0;
 
-            // Destroy any leftover spawned 3D molecule visualizers in scene
+            OnRequestRevertAll?.Invoke();
+
+            // 1. Clear SpatialEngine memory (active markers, filters, pairs, ghosts)
+            if (spatialEngine == null) spatialEngine = FindFirstObjectByType<SpatialEngine>();
+            if (spatialEngine != null) spatialEngine.ClearAllMarkers();
+
+            // 2. Clear ReactionResolver memory (proximity durations, active reaction records, cooldown)
+            if (reactionResolver == null) reactionResolver = FindFirstObjectByType<ReactionResolver>();
+            if (reactionResolver != null)
+            {
+                reactionResolver.DissociateAllReactions();
+                reactionResolver.ClearAllMemory();
+            }
+
+            // 3. Clear ARPerceptionManager memory
+            if (perceptionManager == null) perceptionManager = FindFirstObjectByType<ARPerceptionManager>();
+            if (perceptionManager != null) perceptionManager.ClearAll();
+
+            // 4. Clear VuforiaPerceptionAdapter memory
+            var vpa = FindFirstObjectByType<ChemAR.VuforiaAdapter.VuforiaPerceptionAdapter>();
+            if (vpa != null) vpa.ClearAllMemory();
+
+            // 5. Clear VuforiaReactionController (reactions, proximity timers, cooldown)
+            var vuforiaReactionCtrl = ChemAR.VuforiaAdapter.VuforiaReactionController.Instance ?? FindFirstObjectByType<ChemAR.VuforiaAdapter.VuforiaReactionController>();
+            if (vuforiaReactionCtrl != null)
+            {
+                vuforiaReactionCtrl.DissociateAllReactions();
+                vuforiaReactionCtrl.ClearAllMemory();
+            }
+
+            // 6. Force reset all VuforiaTrackedCard instances (tracking flags, optical sampling, atom visuals)
+            var allCards = FindObjectsByType<ChemAR.VuforiaAdapter.VuforiaTrackedCard>(FindObjectsSortMode.None);
+            for (int i = 0; i < allCards.Length; i++)
+            {
+                if (allCards[i] != null) allCards[i].ForceReset();
+            }
+
+            // 7. Destroy any leftover spawned 3D molecule visualizers in scene
             var allMols = FindObjectsByType<ChemAR.Render.MoleculeVisualizer>(FindObjectsSortMode.None);
             foreach (var m in allMols)
             {
                 if (m != null) Destroy(m.gameObject);
             }
 
-            // Reset scale back to 100%
+            // 8. Reset scale back to 100%
             SetScale(1.0f);
 
             // Visual feedback on button

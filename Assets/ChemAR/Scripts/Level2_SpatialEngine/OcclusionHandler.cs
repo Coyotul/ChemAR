@@ -53,6 +53,11 @@ namespace ChemAR.Spatial
             }
         }
 
+        public void ClearAll()
+        {
+            occlusionTimers.Clear();
+        }
+
         public void Update(float deltaTime, List<TrackedMarkerPose> markers, Action<string> onGhostExpired)
         {
             for (int i = markers.Count - 1; i >= 0; i--)

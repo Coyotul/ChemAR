@@ -165,6 +165,12 @@ namespace ChemAR.Perception
             if (spatialEngine != null) spatialEngine.ClearAllMarkers();
         }
 
+        public void ClearAll()
+        {
+            ClearSimulationCards();
+            if (spatialEngine != null) spatialEngine.ClearAllMarkers();
+        }
+
         private Texture2D LoadMarkerTexture(string symbol)
         {
             string path = $"Assets/ChemAR/Textures/Markers/Marker_{symbol}.png";
